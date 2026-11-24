@@ -1,0 +1,18 @@
+# Built places. Generate these locally; do not commit them.
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+
+# Rojo / editor output
+sourcemap.json
+*.rbxm
+
+# Tool binaries
+/rojo
+/rojo.exe
+/selene
+/selene.exe
+
+# OS junk
+.DS_Store
+Thumbs.db

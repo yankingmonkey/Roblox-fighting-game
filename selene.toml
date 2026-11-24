@@ -1,0 +1,5 @@
+std = "roblox"
+
+[lints]
+# Beginner code uses a few long comments next to the values they explain.
+mixed_table = "allow"

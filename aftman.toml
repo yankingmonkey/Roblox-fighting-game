@@ -1,0 +1,5 @@
+# Aftman installs the same Rojo version if you do not use Rokit.
+# In a terminal: aftman install
+# https://github.com/LPGhatguy/aftman
+[tools]
+rojo = "rojo-rbx/rojo@7.7.1"

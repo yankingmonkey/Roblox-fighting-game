@@ -1,0 +1,4 @@
+# Rokit installs the tools this repo uses. In a terminal: rokit install
+# https://github.com/rojo-rbx/rokit
+[tools]
+rojo = "rojo-rbx/rojo@7.7.1"
