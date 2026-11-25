@@ -8,10 +8,14 @@ local Actions = {
 	SetLoadout = "SetLoadout",
 	SetBlock = "SetBlock",
 	Parry = "Parry",
+	M1 = "M1",
+	Dash = "Dash",
 
 	CastResult = "CastResult",
+	DashResult = "DashResult",
 	Vfx = "Vfx",
 	VfxStop = "VfxStop",
+	Impact = "Impact",
 	MenuResult = "MenuResult",
 }
 

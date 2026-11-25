@@ -100,7 +100,7 @@ function ClassSelect.Mount(gui: ScreenGui)
 		local camera = workspace.CurrentCamera
 		local width = if camera then camera.ViewportSize.X else 1280
 		local columns = columnsFor(width)
-		grid.CellSize = UDim2.new(1 / columns - 0.02, 0, 0, 210)
+		grid.CellSize = UDim2.new(1 / columns - 0.02, 0, 0, 250)
 	end
 	reflow()
 	if workspace.CurrentCamera then
@@ -117,7 +117,8 @@ function ClassSelect.Mount(gui: ScreenGui)
 		button.BackgroundColor3 = Color3.fromRGB(20, 24, 36)
 		button.AutoButtonColor = true
 		UiKit.Corner(button, 12)
-		UiKit.Stroke(button, info.color, 2)
+		UiKit.Glow(button, info.color)
+		UiKit.Gradient(button, info.color:Lerp(Color3.fromRGB(12, 14, 22), 0.55), Color3.fromRGB(14, 16, 26), 120)
 
 		local bar = Instance.new("Frame")
 		bar.Size = UDim2.new(1, 0, 0, 8)
@@ -152,8 +153,8 @@ function ClassSelect.Mount(gui: ScreenGui)
 			table.insert(lines, line)
 		end
 		local moves = UiKit.Label(button, table.concat(lines, " · "))
-		moves.Position = UDim2.fromScale(0.05, 0.62)
-		moves.Size = UDim2.fromScale(0.9, 0.32)
+		moves.Position = UDim2.fromScale(0.05, 0.58)
+		moves.Size = UDim2.fromScale(0.9, 0.38)
 		moves.TextSize = 12
 		moves.TextColor3 = Color3.fromRGB(170, 178, 200)
 

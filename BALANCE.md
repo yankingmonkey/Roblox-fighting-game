@@ -149,3 +149,31 @@ Thermal Gaze is the strongest basic button in the game **when it lands clean**. 
 - Make clones tankier: they are hard-coded to die to any damaging hit in `CombatService.ApplyDamage`. That is the counterplay. Don't give them a big health pool if you want that to stay true.
 
 Iron Body's 40% reduction stacks with a block: the hit is reduced, then the block takes 35% of what remains. That is strong on purpose and it lasts 4 seconds on a 16 second cooldown.
+
+## Extra pool moves
+
+Each class now has 8 normal moves and 2 ultimates. The starter loadout is unchanged, so the rotations above are still the baseline. The new moves are sidegrades: similar cost and damage to something already in the kit, so equipping them is a choice, not a power bump.
+
+| Class | Added moves | Added ultimate |
+| --- | --- | --- |
+| Ki Warrior | Ki Burst 16, Charged Shot 26, Ki Barrier (30% reduction, 3s) | Dragon Wave, 10 x 8 ticks |
+| Brawler | Uppercut 18 + stun, Lariat 20, War Cry slow | Quake Line 62 |
+| Speedster | Spark Kick 18, Zip Upper 14 dash, Static Field 12 + short stun | Storm Run 70 dash |
+| Elemental | Ember Burst 18, Hail Volley 6 x 4, Gale Push 10 + heavy knockback | Inferno Column 66 |
+| Ninja | Smoke Veil (iframe + slow), Needle Toss 14, Rising Kick 20 | Thousand Stars 8 x 8 |
+| Superhero | Heat Pulse 22 beam, Hero Slam 22, Shockwave Leap 16 | Solar Flare 70 |
+
+Cooldowns and energy for these are in `Balance.Abilities` next to the originals. Lasers in the new pool (Dragon Wave, Heat Pulse) follow the same block and stun rules.
+
+## Basic combo and shift dash
+
+These are fillers. They are not class abilities.
+
+| Action | Numbers |
+| --- | --- |
+| Click combo | 3 + 4 + 4 + 8 damage. Energy 3, 3, 3, 4. 0.34s between hits. Resets if you wait 0.95s. The 4th hit knocks back. |
+| Shift dash | 14 studs, 10 energy, 2.8s cooldown, a very short invincible window (0.08s). No damage. |
+
+Speedster Burst Dash is still 30 studs. The shift dash is the universal one.
+
+Walk speed is 18 (was the default 16) so moving between hits feels less stuck. It does not change ability damage.

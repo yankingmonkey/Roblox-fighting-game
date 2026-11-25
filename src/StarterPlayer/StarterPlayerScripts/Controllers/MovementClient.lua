@@ -142,9 +142,16 @@ function MovementClient.Start()
 		if not humanoid or not root or humanoid.Health <= 0 then
 			return
 		end
-		if character:GetAttribute("Flying") == true then
+		local flying = character:GetAttribute("Flying") == true
+		local ragdoll = character:GetAttribute("Ragdoll") == true
+		if flying then
 			humanoid.PlatformStand = true
 			root.AssemblyLinearVelocity = flightWish()
+		elseif ragdoll then
+			-- Limp for a moment so a heavy hit reads as a knockdown, not a slide.
+			humanoid.PlatformStand = true
+		elseif humanoid.PlatformStand then
+			humanoid.PlatformStand = false
 		end
 	end)
 end

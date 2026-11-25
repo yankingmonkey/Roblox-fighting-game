@@ -34,6 +34,12 @@ function Remotes.Tell(player: Player, payload: any)
 	notifyEvent:FireClient(player, payload)
 end
 
+function Remotes.TellAll(payload: any)
+	for _, other in game:GetService("Players"):GetPlayers() do
+		notifyEvent:FireClient(other, payload)
+	end
+end
+
 function Remotes.TellOthers(except: Player, payload: any)
 	for _, other in game:GetService("Players"):GetPlayers() do
 		if other ~= except then

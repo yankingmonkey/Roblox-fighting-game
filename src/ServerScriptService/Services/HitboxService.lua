@@ -26,7 +26,12 @@ local function characterFromPart(part: Instance): Model?
 	return nil
 end
 
-local function excludeList(ctx: CastContext): { Instance }
+type Attacker = {
+	player: Player,
+	character: Model,
+}
+
+local function excludeList(ctx: Attacker): { Instance }
 	local list: { Instance } = { ctx.character }
 	local folder = workspace:FindFirstChild("FightingClassActors")
 	if folder then
@@ -228,6 +233,17 @@ function HitboxService.LaunchProjectile(ctx: CastContext, direction: Vector3, st
 			resolve(pos, nil)
 		end
 	end)
+end
+
+function HitboxService.OpponentsInBox(player: Player, character: Model, cframe: CFrame, size: Vector3): { Model }
+	local params = OverlapParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = excludeList({
+		player = player,
+		character = character,
+	})
+	params.MaxParts = 30
+	return uniqueModels(workspace:GetPartBoundsInBox(cframe, size, params), character)
 end
 
 return HitboxService

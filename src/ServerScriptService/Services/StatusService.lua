@@ -151,6 +151,16 @@ function StatusService.ApplyKnockback(model: Model, velocity: Vector3)
 	local token = (if typeof(current) == "number" then current else 0) + 1
 	model:SetAttribute("Knockback", velocity)
 	model:SetAttribute("KnockbackToken", token)
+	-- Big launches get a short limp. The client applies it. Small bumps stay on their feet.
+	if velocity.Magnitude >= 18 then
+		model:SetAttribute("RagdollToken", token)
+		model:SetAttribute("Ragdoll", true)
+		task.delay(0.45, function()
+			if model.Parent and model:GetAttribute("RagdollToken") == token then
+				model:SetAttribute("Ragdoll", false)
+			end
+		end)
+	end
 end
 
 function StatusService.Start()

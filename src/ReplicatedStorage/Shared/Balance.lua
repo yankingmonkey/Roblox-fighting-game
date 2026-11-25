@@ -206,6 +206,58 @@ local abilities: { [string]: AbilityTuning } = {
 		range = 80,
 		knockback = 10,
 	},
+
+	-- Extra pool moves. Sidegrades of the originals so the starter loadout stays the baseline.
+	KiBurst = { damage = 16, cooldown = 7, energyCost = 16, range = 0, radius = 12, knockback = 18 },
+	ChargedShot = { damage = 26, cooldown = 8, energyCost = 20, range = 85, speed = 70, radius = 3, knockback = 16 },
+	KiBarrier = { damage = 0, cooldown = 14, energyCost = 16, range = 0, damageReduction = 0.3, buffDuration = 3 },
+	DragonWave = { damage = 10, ticks = 8, tickInterval = 0.22, cooldown = 44, energyCost = 78, range = 80, knockback = 8 },
+
+	Uppercut = { damage = 18, cooldown = 6, energyCost = 12, range = 7, width = 5, stun = 0.4, knockback = 32 },
+	Lariat = { damage = 20, cooldown = 7, energyCost = 14, range = 9, width = 10, knockback = 24 },
+	WarCry = { damage = 8, cooldown = 12, energyCost = 18, range = 0, radius = 16, slow = 0.7, slowDuration = 2, knockback = 10 },
+	QuakeLine = { damage = 62, cooldown = 42, energyCost = 72, range = 28, width = 16, knockback = 36 },
+
+	SparkKick = { damage = 18, cooldown = 4.5, energyCost = 12, range = 8, width = 6, knockback = 14 },
+	ZipUpper = { damage = 14, cooldown = 6, energyCost = 12, range = 6, distance = 20, width = 5, knockback = 18, iframe = 0.1 },
+	StaticField = { damage = 12, cooldown = 10, energyCost = 18, range = 0, radius = 14, stun = 0.25, knockback = 8 },
+	StormRun = { damage = 70, cooldown = 40, energyCost = 70, range = 6, distance = 40, width = 7, knockback = 30, iframe = 0.12 },
+
+	EmberBurst = { damage = 18, cooldown = 7, energyCost = 16, range = 0, radius = 12, knockback = 16 },
+	HailVolley = {
+		damage = 6,
+		projectiles = 4,
+		cooldown = 8,
+		energyCost = 18,
+		range = 70,
+		speed = 130,
+		radius = 1.8,
+		spreadDeg = 18,
+		slow = 0.6,
+		slowDuration = 1.6,
+	},
+	GalePush = { damage = 10, cooldown = 9, energyCost = 16, range = 0, radius = 16, knockback = 60 },
+	InfernoColumn = { damage = 66, cooldown = 44, energyCost = 76, range = 0, radius = 16, knockback = 28 },
+
+	SmokeVeil = { damage = 6, cooldown = 11, energyCost = 16, range = 0, radius = 13, iframe = 0.35, slow = 0.6, slowDuration = 1.5 },
+	NeedleToss = { damage = 14, cooldown = 3.5, energyCost = 8, range = 75, speed = 200, radius = 1.2, knockback = 4 },
+	RisingKick = { damage = 20, cooldown = 6, energyCost = 14, range = 8, width = 5, knockback = 28 },
+	ThousandStars = {
+		damage = 8,
+		projectiles = 8,
+		cooldown = 42,
+		energyCost = 72,
+		range = 70,
+		speed = 150,
+		radius = 1.5,
+		spreadDeg = 28,
+		knockback = 8,
+	},
+
+	HeatPulse = { damage = 22, cooldown = 5, energyCost = 24, range = 70, knockback = 6 },
+	HeroSlam = { damage = 22, cooldown = 8, energyCost = 16, range = 0, radius = 12, knockback = 30 },
+	ShockwaveLeap = { damage = 16, cooldown = 7, energyCost = 14, range = 6, distance = 18, width = 6, knockback = 26 },
+	SolarFlare = { damage = 70, cooldown = 46, energyCost = 80, range = 0, radius = 20, knockback = 34 },
 }
 
 
@@ -236,8 +288,29 @@ local Balance = {
 	MinCastGap = 0.15,
 	MaxCastsPerSecond = 8,
 
-	BaseWalkSpeed = 16,
-	BaseJumpPower = 50,
+	-- A bit quicker than the default avatar so a fight doesn't feel like a walk.
+	BaseWalkSpeed = 18,
+	BaseJumpPower = 55,
+
+	-- Basic 4-hit string (mouse / Attack). Melee filler. It spends a little energy
+	-- so it cannot replace a class kit. Finisher is the 4th hit.
+	BlockStopsBasics = true,
+	M1 = {
+		damages = { 3, 4, 4, 8 },
+		energies = { 3, 3, 3, 4 },
+		gap = 0.34,
+		reset = 0.95,
+		range = 6.5,
+		width = 5,
+		knockbacks = { 6, 8, 10, 26 },
+	},
+	-- Shift dash. Shorter than Speedster Burst Dash so that class stays the mobile one.
+	CombatDash = {
+		distance = 14,
+		cooldown = 2.8,
+		energy = 10,
+		iframe = 0.08,
+	},
 
 	-- Tap R (starter control). A real parry system can set ParryWindow itself.
 	ParryWindow = 0.18,

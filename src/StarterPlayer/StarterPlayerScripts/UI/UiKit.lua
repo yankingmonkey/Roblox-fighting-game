@@ -86,4 +86,22 @@ function UiKit.BindScale(gui: ScreenGui)
 	end)
 end
 
+function UiKit.Gradient(parent: Instance, fromColor: Color3, toColor: Color3, rotation: number)
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new(fromColor, toColor)
+	gradient.Rotation = rotation
+	gradient.Parent = parent
+	return gradient
+end
+
+function UiKit.Glow(parent: Instance, color: Color3)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color
+	stroke.Thickness = 1.6
+	stroke.Transparency = 0.2
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = parent
+	return stroke
+end
+
 return UiKit

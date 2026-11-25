@@ -6,6 +6,8 @@
 --   L        loadout menu
 --   F        hold to block (starter hook)
 --   R        tap to parry (starter hook)
+--   Click    4-hit basic combo
+--   Shift    short dash with afterimages
 
 local UserInputService = game:GetService("UserInputService")
 
@@ -26,6 +28,13 @@ function InputController.Start(isMenuOpen: () -> boolean, toggleLoadout: () -> (
 		if processed then
 			return
 		end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			if isMenuOpen() then
+				return
+			end
+			AbilityClient.M1()
+			return
+		end
 		if input.UserInputType ~= Enum.UserInputType.Keyboard then
 			return
 		end
@@ -43,6 +52,8 @@ function InputController.Start(isMenuOpen: () -> boolean, toggleLoadout: () -> (
 			AbilityClient.SetBlock(true)
 		elseif input.KeyCode == Enum.KeyCode.R then
 			AbilityClient.Parry()
+		elseif input.KeyCode == Enum.KeyCode.LeftShift then
+			AbilityClient.Dash()
 		end
 	end)
 

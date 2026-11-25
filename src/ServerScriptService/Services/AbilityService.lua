@@ -15,6 +15,7 @@ local Types = require(Replicated.Shared.Types)
 local Util = require(Replicated.Shared.Util)
 local CombatService = require(script.Parent.CombatService)
 local EnergyService = require(script.Parent.EnergyService)
+local PoseService = require(script.Parent.PoseService)
 local Remotes = require(script.Parent.Parent.Remotes)
 
 type CastContext = Types.CastContext
@@ -191,6 +192,7 @@ function AbilityService.HandleCast(player: Player, payload: { [string]: any })
 		failReason = nil,
 	}
 
+	PoseService.ForAbility(character, ability)
 	local okRun, result = pcall(function()
 		return ability.Execute(ctx)
 	end)

@@ -19,9 +19,13 @@
 
 local Players = game:GetService("Players")
 
-local Balance = require(game:GetService("ReplicatedStorage").FightingClasses.Shared.Balance)
+local Replicated = game:GetService("ReplicatedStorage").FightingClasses
+local Actions = require(Replicated.Shared.Actions)
+local Balance = require(Replicated.Shared.Balance)
 local StatusService = require(script.Parent.StatusService)
-local Util = require(game:GetService("ReplicatedStorage").FightingClasses.Shared.Util)
+local Util = require(Replicated.Shared.Util)
+local PoseService = require(script.Parent.PoseService)
+local Remotes = require(script.Parent.Parent.Remotes)
 
 export type HitInfo = {
 	stun: number?,
@@ -120,6 +124,15 @@ function CombatService.ApplyDamage(attacker: Player, target: Model, rawDamage: n
 	if target:GetAttribute("IsClone") == true and rawDamage > 0 then
 		CombatService.TagPlayer(attacker)
 		CombatService.TagPlayer(ownerOf(target))
+		local cloneRoot = Util.Root(target)
+		Remotes.TellAll({
+			action = Actions.Impact,
+			position = if cloneRoot then cloneRoot.Position else target:GetPivot().Position,
+			classId = attacker:GetAttribute("ClassId"),
+			amount = 1,
+			abilityId = info.abilityId,
+			attackerUserId = attacker.UserId,
+		})
 		target:Destroy()
 		return 0
 	end
@@ -186,6 +199,23 @@ function CombatService.ApplyDamage(attacker: Player, target: Model, rawDamage: n
 
 	if humanoid.Health > 0 and info.slow and info.slowDuration and info.slowDuration > 0 then
 		StatusService.ApplySlow(target, info.slow, info.slowDuration)
+	end
+
+	if amount > 0 and target:GetAttribute("IsClone") ~= true then
+		local heavy = (info.knockback or 0) >= 20
+		PoseService.Play(target, if heavy then "Knockback" else "Hit", if heavy then 0.5 else 0.28)
+		local victim = ownerOf(target)
+		local targetRoot = Util.Root(target)
+		Remotes.TellAll({
+			action = Actions.Impact,
+			position = if targetRoot then targetRoot.Position else target:GetPivot().Position,
+			classId = attacker:GetAttribute("ClassId"),
+			amount = amount,
+			abilityId = info.abilityId,
+			attackerUserId = attacker.UserId,
+			victimUserId = if victim then victim.UserId else 0,
+			heavy = heavy,
+		})
 	end
 
 	CombatService.TagPlayer(attacker)

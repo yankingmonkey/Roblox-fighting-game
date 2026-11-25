@@ -2,7 +2,7 @@
 
 A beginner-friendly class and ability system for a Roblox fighting game, in the style of a Dragon Ball arena fighter with a DC Universe Online style loadout. Characters are normal R15 rigs. You build the moves in this repo and sync them into Roblox Studio with Rojo.
 
-There are **6 classes**, **6 abilities each** (one of them an ultimate), a hotbar, a loadout menu, energy, and saving. The first time someone joins they pick a class. After that they can change class from the menu only while they are out of combat.
+There are **6 classes**. Each class has a pool of **8 moves and 2 ultimates**. You equip 4 moves and 1 ultimate. The first time someone joins they pick a class. After that they can change class from the menu only while they are out of combat.
 
 Numbers and the “who beats whom” notes are in [BALANCE.md](BALANCE.md).
 
@@ -10,18 +10,20 @@ Numbers and the “who beats whom” notes are in [BALANCE.md](BALANCE.md).
 
 | Key | Action |
 | --- | --- |
+| Click | 4-hit basic combo. The 4th hit knocks back harder. |
+| Shift | Short dash with afterimages. Speedster dashes are still longer. |
 | 1 2 3 4 | Cast the ability in that slot |
 | Q | Cast the ultimate (only an ultimate can sit in this slot) |
 | L | Open or close the loadout menu |
 | F (hold) | Block. Blocked hits deal 35% damage. |
 | R | Parry. A hit during the short window deals no damage and stuns the attacker. |
-| Click a hotbar slot | Same as the number keys. Use these on a phone. |
-| Block / Parry buttons | Same as F and R, for touch screens. |
+| Attack / Dash buttons | Same as click and Shift, for phones. |
+| Block / Parry buttons | Same as F and R. |
 | Rise / Drop | Show up when Flight is equipped. Space and Ctrl do the same on a keyboard. |
 
-On screen, from top to bottom: a short message (“Not enough energy”, “Stunned”, …), an **IN COMBAT** label, the energy bar, then the five slots. A dark bar growing over a slot is the cooldown.
+The HUD is a dark glass panel: health, ki, then five slots. A slot on cooldown has a dark sweep and a white hand. Hover a move in the loadout for its description. Drag it onto a slot, or click it and then click the slot.
 
-In the loadout menu, click an ability on the left, then click a slot on the right. Slots 1–4 refuse ultimates. The Q slot refuses normal moves. An ability can only be equipped once.
+Slots 1–4 take any non-ultimate from that class. Q takes one of the two ultimates. The same move cannot sit in two slots. The server checks this again before it saves.
 
 The class screen covers the game until a class is chosen. **Change class** in the loadout menu opens it again. The server says no if you are still in combat (about 8 seconds after a hit or a cast).
 
@@ -102,9 +104,9 @@ Please:
 2. Install Rojo 7.7.1 from the repo: run `rokit install` (uses rokit.toml) or `aftman install` (uses aftman.toml).
 3. Start `rojo serve` in the repo and leave it running.
 4. Tell me the exact Studio clicks: open my existing place, install the Rojo plugin if I do not have it, press Connect, then press Play.
-5. Do not rewrite the ability system and do not delete my other scripts. Rojo only syncs a FightingClasses folder into ReplicatedStorage, ServerScriptService, StarterPlayerScripts, and StarterGui.
-6. After it syncs, help me playtest: pick a class, open the loadout with L, and try keys 1, 2, 3, 4, and Q.
-7. If I want a new move, follow README.md “Add an ability”. Keep the numbers in src/ReplicatedStorage/Shared/Balance.lua.
+5. Do not rewrite the ability system, the VFX themes, or the procedural poses, and do not delete my other scripts. Rojo only syncs a FightingClasses folder into ReplicatedStorage, ServerScriptService, StarterPlayerScripts, and StarterGui.
+6. After it syncs, help me playtest: pick a class, click a 4-hit combo, Shift-dash, open the loadout with L, drag a different move onto a slot, and try keys 1, 2, 3, 4, and Q.
+7. If I want a new move, follow README.md “Add an ability”. Keep the numbers in src/ReplicatedStorage/Shared/Balance.lua. To use my uploaded R15 animations, paste ids into src/ReplicatedStorage/Shared/AnimationConfig.lua.
 
 The place uses R15 characters. The game is a fighting game. Do not replace my map.
 ```
@@ -168,21 +170,25 @@ The server is the one that applies damage. The client plays the neon effect imme
 3. Add their numbers under `Balance.Abilities`.
 4. Play. The class screen builds the card from `Classes.lua` and from the modules. You do not have to edit the UI code unless you want a new layout.
 
+## Looks and poses
+
+Effects are drawn on every client from `Controllers/VfxThemes.lua` (lightning, ki orbs, fire, ice, smoke, spinning stars, eye beams, shockwaves). They use neon parts, Beams, Trails, lights, and Roblox’s built-in particle textures. Hits also spark and shake the camera.
+
+Bodies pose in code (`Controllers/ProceduralAnim.lua`): a fight idle, punches, a kick, casts, a dash lean, a superman flight pose, hit reacts, and a short knockdown. You do not have to upload anything for that.
+
 ## Where to put animation ids
 
-Each ability module has:
+Two places:
 
-```lua
-animationId = "",
-```
-
-When you have an animation uploaded to Roblox, set that to the asset id, including the prefix:
+1. One move’s own clip, on the ability module:
 
 ```lua
 animationId = "rbxassetid://1234567890",
 ```
 
-Leave it as `""` until then. The move, the hitbox, and the neon effect still run. The client plays the animation on the caster when the string is not empty. It looks for an `Animator` under the Humanoid and adds one if your rig does not have one yet.
+Leave it `""` and the procedural pose is used.
+
+2. Your R15 pack, for the shared poses (idle, the four combo hits, dash, flight, hit, knockback). Open `src/ReplicatedStorage/Shared/AnimationConfig.lua` and paste ids into `Overrides`. An empty string keeps the procedural pose. A filled id is played by the server so other players see it.
 
 ## Block, parry, stun, and the hooks
 

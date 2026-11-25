@@ -12,7 +12,9 @@ local Balance = require(Shared:WaitForChild("Balance"))
 local LoadoutUtil = require(Shared:WaitForChild("LoadoutUtil"))
 local MovementMath = require(Shared:WaitForChild("MovementMath"))
 local Util = require(Shared:WaitForChild("Util"))
+local Classes = require(Shared:WaitForChild("Classes"))
 local VfxClient = require(script.Parent.VfxClient)
+local VfxKit = require(script.Parent.VfxKit)
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("Remotes")
@@ -22,6 +24,8 @@ local notifyEvent = remotes:WaitForChild("Notify") :: RemoteEvent
 local serverEnds: { [string]: number } = {}
 local optimisticEnds: { [string]: number } = {}
 local savedCFrame: { [string]: CFrame } = {}
+local savedDash: CFrame? = nil
+local afterimages: () -> ()
 local castAbility: { [string]: string } = {}
 local castSerial = 0
 local blocking = false
@@ -177,7 +181,9 @@ function AbilityClient.Cast(slot: number)
 		optimisticEnds[abilityId] = workspace:GetServerTimeNow() + ability.cooldown
 	end
 	VfxClient.Predict(abilityId, root.Position + Vector3.new(0, 1.2, 0), direction, castId)
-	predictMove(castId, abilityId, direction, moveDirection)
+	if predictMove(castId, abilityId, direction, moveDirection) then
+		afterimages()
+	end
 
 	actionEvent:FireServer({
 		action = Actions.Cast,
@@ -197,6 +203,79 @@ function AbilityClient.SetBlock(wantBlock: boolean)
 		action = Actions.SetBlock,
 		blocking = wantBlock,
 	})
+end
+
+local function aimDirection(): Vector3
+	local camera = workspace.CurrentCamera
+	if camera then
+		return camera.CFrame.LookVector
+	end
+	local root = select(1, rootAndHumanoid())
+	return if root then root.CFrame.LookVector else Vector3.new(0, 0, -1)
+end
+
+local function classColor(): Color3
+	local classId = Util.ReadString(player:GetAttribute("ClassId"), "")
+	local info = Classes.ById[classId]
+	return if info then info.color else Color3.fromRGB(255, 255, 255)
+end
+
+function afterimages()
+	local character = player.Character
+	if not character then
+		return
+	end
+	local color = classColor()
+	VfxKit.Afterimage(character, color)
+	task.delay(0.07, function()
+		if character.Parent then
+			VfxKit.Afterimage(character, color)
+		end
+	end)
+	task.delay(0.14, function()
+		if character.Parent then
+			VfxKit.Afterimage(character, color)
+		end
+	end)
+end
+
+function AbilityClient.M1()
+	local character = player.Character
+	if not character or character:GetAttribute("Stunned") == true then
+		return
+	end
+	if character:GetAttribute("Blocking") == true then
+		return
+	end
+	actionEvent:FireServer({
+		action = Actions.M1,
+		direction = aimDirection(),
+	})
+end
+
+function AbilityClient.Dash()
+	local root, humanoid = rootAndHumanoid()
+	if not root or not humanoid then
+		return
+	end
+	local character = player.Character
+	if character and character:GetAttribute("Stunned") == true then
+		setStatus("Stunned")
+		return
+	end
+	local direction = aimDirection()
+	local moveDirection = humanoid.MoveDirection
+	local stats = Balance.CombatDash
+	local saved = root.CFrame
+	local goal = MovementMath.Compute(root, direction, moveDirection, stats.distance, "dash")
+	place(root, goal.Position, goal.LookVector)
+	afterimages()
+	actionEvent:FireServer({
+		action = Actions.Dash,
+		direction = direction,
+		moveDirection = moveDirection,
+	})
+	savedDash = saved
 end
 
 function AbilityClient.Parry()
@@ -277,6 +356,29 @@ function AbilityClient.Start()
 			if typeof(payload.castId) == "string" then
 				VfxClient.Stop(payload.castId)
 			end
+		elseif action == Actions.DashResult then
+			if payload.ok == true and typeof(payload.move) == "table" then
+				local move = payload.move
+				local root = select(1, rootAndHumanoid())
+				if root and typeof(move.position) == "Vector3" and typeof(move.look) == "Vector3" then
+					if (root.Position - move.position).Magnitude > 6 then
+						place(root, move.position, move.look)
+					end
+				end
+				savedDash = nil
+			else
+				if typeof(payload.reason) == "string" and payload.reason ~= "" then
+					setStatus(payload.reason)
+				end
+				local root = select(1, rootAndHumanoid())
+				if root and savedDash then
+					root.CFrame = savedDash
+					root.AssemblyLinearVelocity = Vector3.zero
+				end
+				savedDash = nil
+			end
+		elseif action == Actions.Impact then
+			VfxClient.Impact(payload)
 		elseif action == Actions.MenuResult then
 			if typeof(payload.reason) == "string" and payload.reason ~= "" and payload.reason ~= "Class set." and payload.reason ~= "Loadout saved." then
 				setStatus(payload.reason)
