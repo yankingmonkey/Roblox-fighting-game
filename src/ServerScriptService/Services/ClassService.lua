@@ -30,9 +30,11 @@ end
 local function apply(player: Player, classId: string, slots: { string }, saveNow: boolean)
 	player:SetAttribute("ClassId", classId)
 	player:SetAttribute("Loadout", LoadoutUtil.Encode(slots))
+	local previous = DataService.Get(player)
 	DataService.Set(player, {
 		classId = classId,
 		loadout = slots,
+		outfit = if previous then previous.outfit else {},
 	}, true)
 	if saveNow then
 		DataService.Save(player)
@@ -132,6 +134,26 @@ function ClassService.HandleSetLoadout(player: Player, payload: { [string]: any 
 	end
 	apply(player, classId, slots, false)
 	menu(player, true, "Loadout saved.")
+end
+
+function ClassService.ReturnToMenu(player: Player)
+	CombatService.Clear(player)
+	AbilityService.ClearAll(player)
+	player:SetAttribute("Energy", Balance.MaxEnergy)
+	local character = player.Character
+	if character then
+		character:SetAttribute("Flying", false)
+		character:SetAttribute("Stunned", false)
+		character:SetAttribute("Blocking", false)
+		character:SetAttribute("Ragdoll", false)
+		character:SetAttribute("Pose", "")
+	end
+	player:LoadCharacter()
+	Remotes.Tell(player, {
+		action = Actions.MenuResult,
+		ok = true,
+		reason = "Menu",
+	})
 end
 
 function ClassService.Start()

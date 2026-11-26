@@ -57,6 +57,11 @@ function CombatService.IsInCombat(player: Player): boolean
 	return untilTime ~= nil and workspace:GetServerTimeNow() < untilTime
 end
 
+function CombatService.Clear(player: Player)
+	combatUntil[player] = nil
+	player:SetAttribute("InCombat", false)
+end
+
 local function ownerOf(model: Model): Player?
 	local player = Players:GetPlayerFromCharacter(model)
 	if player then

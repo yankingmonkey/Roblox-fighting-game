@@ -177,3 +177,5 @@ These are fillers. They are not class abilities.
 Speedster Burst Dash is still 30 studs. The shift dash is the universal one.
 
 Walk speed is 18 (was the default 16) so moving between hits feels less stuck. It does not change ability damage.
+
+Aiming does not change damage either. Projectiles still use their old speed and range, so a shot can be sidestepped. Ground areas such as Ground Slam and Storm Cage can be placed up to 36 studs away. The blast radius is the same number as before.

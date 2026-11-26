@@ -10,7 +10,10 @@ Numbers and the “who beats whom” notes are in [BALANCE.md](BALANCE.md).
 
 | Key | Action |
 | --- | --- |
-| Click | 4-hit basic combo. The 4th hit knocks back harder. |
+| Click | 4-hit basic combo. Aim the punch with the mouse. |
+| Shift | Short dash with afterimages. |
+| V | Toggle shift-lock aim (mouse turns the camera). |
+| M or Menu | Respawn and return to the title screen. Your class, loadout, and outfit stay saved. |
 | Shift | Short dash with afterimages. Speedster dashes are still longer. |
 | 1 2 3 4 | Cast the ability in that slot |
 | Q | Cast the ultimate (only an ultimate can sit in this slot) |
@@ -24,6 +27,12 @@ Numbers and the “who beats whom” notes are in [BALANCE.md](BALANCE.md).
 The HUD is a dark glass panel: health, ki, then five slots. A slot on cooldown has a dark sweep and a white hand. Hover a move in the loadout for its description. Drag it onto a slot, or click it and then click the slot.
 
 Slots 1–4 take any non-ultimate from that class. Q takes one of the two ultimates. The same move cannot sit in two slots. The server checks this again before it saves.
+
+Shots and beams go where the cursor is. Projectiles take time to arrive, so you can step out of them and you should aim ahead of a moving target. Some areas (ground slam, ember burst, storm cage, and a few others) drop on the floor under the cursor, inside 36 studs. A ring on the ground shows that spot. The white crosshair is the center of the screen.
+
+The title screen has Play, Classes, Loadout, Customize, and Settings (volume, camera shake, aim mode). Customize dresses your R15 character with made-in-code pieces. The server welds them on so other players see them, and they save with your class. To use a mesh later, set `assetId` on that item in `src/ReplicatedStorage/Shared/OutfitCatalog.lua` (the builder still draws the part shape today).
+
+Each move has its own pose sequence. To replace one with your uploaded animation, add a line to `AnimationConfig.Overrides` using the ability id, for example `HeavyPunch = "rbxassetid://123"`. `Punch1` through `Punch4` are the click combo.
 
 The class screen covers the game until a class is chosen. **Change class** in the loadout menu opens it again. The server says no if you are still in combat (about 8 seconds after a hit or a cast).
 
@@ -105,8 +114,8 @@ Please:
 3. Start `rojo serve` in the repo and leave it running.
 4. Tell me the exact Studio clicks: open my existing place, install the Rojo plugin if I do not have it, press Connect, then press Play.
 5. Do not rewrite the ability system, the VFX themes, or the procedural poses, and do not delete my other scripts. Rojo only syncs a FightingClasses folder into ReplicatedStorage, ServerScriptService, StarterPlayerScripts, and StarterGui.
-6. After it syncs, help me playtest: pick a class, click a 4-hit combo, Shift-dash, open the loadout with L, drag a different move onto a slot, and try keys 1, 2, 3, 4, and Q.
-7. If I want a new move, follow README.md “Add an ability”. Keep the numbers in src/ReplicatedStorage/Shared/Balance.lua. To use my uploaded R15 animations, paste ids into src/ReplicatedStorage/Shared/AnimationConfig.lua.
+6. After it syncs, help me playtest: use the title screen, pick a class, aim a projectile with the mouse, click a 4-hit combo, open Customize and save a color, press M to return to the menu, and try keys 1, 2, 3, 4, and Q.
+7. If I want a new move, follow README.md “Add an ability”. Keep the numbers in src/ReplicatedStorage/Shared/Balance.lua. To use my uploaded R15 animations, paste ids into src/ReplicatedStorage/Shared/AnimationConfig.lua under the ability id. Do not remove the server aim checks.
 
 The place uses R15 characters. The game is a fighting game. Do not replace my map.
 ```

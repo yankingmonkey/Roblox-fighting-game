@@ -249,7 +249,19 @@ function VfxKit.Afterimage(character: Model, color: Color3)
 	end)
 end
 
+local shakeEnabled = true
+
+function VfxKit.SetShakeEnabled(enabled: boolean)
+	shakeEnabled = enabled
+	if not enabled then
+		shakeLeft = 0
+	end
+end
+
 function VfxKit.Shake(amount: number)
+	if not shakeEnabled then
+		return
+	end
 	shakeLeft = math.clamp(shakeLeft + amount, 0, 1.6)
 end
 

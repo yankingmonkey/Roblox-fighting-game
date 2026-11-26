@@ -10,6 +10,8 @@ local Actions = {
 	Parry = "Parry",
 	M1 = "M1",
 	Dash = "Dash",
+	ReturnToMenu = "ReturnToMenu",
+	SetOutfit = "SetOutfit",
 
 	CastResult = "CastResult",
 	DashResult = "DashResult",

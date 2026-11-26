@@ -52,31 +52,20 @@ function PoseService.Play(character: Model, poseName: string, duration: number)
 end
 
 function PoseService.ForAbility(character: Model, ability: AbilityDefinition)
-	local pose = "Cast"
-	local duration = 0.45
-	if ability.isUltimate then
-		pose = "Ult"
-		duration = 0.7
-	elseif ability.vfx == "channelBeam" or ability.vfx == "buff" or ability.vfx == "charge" then
-		pose = "Charge"
-		duration = 0.9
-	elseif ability.vfx == "flurry" then
-		pose = "Flurry"
-		duration = 0.7
-	elseif ability.kind == "melee" or ability.vfx == "melee" then
-		pose = "Punch1"
-		duration = 0.4
-	elseif ability.kind == "movement" or ability.vfx == "dash" or ability.vfx == "blink" or ability.vfx == "dive" then
-		pose = "Dash"
-		duration = 0.35
-	elseif ability.vfx == "aoe" or ability.vfx == "cone" or ability.vfx == "smoke" then
-		pose = "Stomp"
-		duration = 0.5
-	end
 	if ability.vfx == "flight" then
 		return
 	end
-	PoseService.Play(character, pose, duration)
+	-- The pose name is the ability id, so each move can have its own clip or sequence.
+	local clip = AnimationConfig.Clip(ability.id)
+	if clip == "" and ability.isUltimate then
+		clip = AnimationConfig.Clip("Ult")
+	end
+	if clip ~= "" then
+		playClip(character, clip, false)
+		character:SetAttribute("Pose", "")
+		return
+	end
+	PoseService.Play(character, ability.id, if ability.isUltimate then 1.05 else 0.9)
 end
 
 function PoseService.Start()

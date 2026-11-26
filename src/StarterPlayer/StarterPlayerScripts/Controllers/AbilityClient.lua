@@ -12,6 +12,7 @@ local Balance = require(Shared:WaitForChild("Balance"))
 local LoadoutUtil = require(Shared:WaitForChild("LoadoutUtil"))
 local MovementMath = require(Shared:WaitForChild("MovementMath"))
 local Util = require(Shared:WaitForChild("Util"))
+local AimRules = require(Shared:WaitForChild("AimRules"))
 local Classes = require(Shared:WaitForChild("Classes"))
 local VfxClient = require(script.Parent.VfxClient)
 local VfxKit = require(script.Parent.VfxKit)
@@ -29,6 +30,8 @@ local afterimages: () -> ()
 local castAbility: { [string]: string } = {}
 local castSerial = 0
 local blocking = false
+local onMenu: (() -> ())? = nil
+local shiftLock = false
 local statusText = ""
 local statusUntil = 0
 
@@ -78,6 +81,38 @@ local function rootAndHumanoid(): (BasePart?, Humanoid?)
 		return nil, nil
 	end
 	return root, humanoid
+end
+
+function AbilityClient.OnMenu(callback: () -> ())
+	onMenu = callback
+end
+
+function AbilityClient.SetShiftLock(enabled: boolean)
+	shiftLock = enabled
+	game:GetService("UserInputService").MouseBehavior = if enabled
+		then Enum.MouseBehavior.LockCenter
+		else Enum.MouseBehavior.Default
+end
+
+function AbilityClient.ShiftLock(): boolean
+	return shiftLock
+end
+
+local function readAim(maxRange: number): (Vector3, Vector3)
+	local camera = workspace.CurrentCamera
+	local root = select(1, rootAndHumanoid())
+	local look = if camera then camera.CFrame.LookVector else Vector3.new(0, 0, -1)
+	local origin = if root then root.Position + Vector3.new(0, 1.6, 0) else Vector3.zero
+	if shiftLock or not camera then
+		return look, origin + look * maxRange
+	end
+	local mouse = player:GetMouse()
+	local hit = mouse.Hit.Position
+	local offset = hit - origin
+	if offset.Magnitude < 0.3 then
+		return look, origin + look * maxRange
+	end
+	return offset.Unit, hit
 end
 
 local function place(root: BasePart, position: Vector3, look: Vector3)
@@ -170,17 +205,16 @@ function AbilityClient.Cast(slot: number)
 	castSerial += 1
 	local castId = tostring(player.UserId) .. "-" .. tostring(castSerial)
 	castAbility[castId] = abilityId
-	local direction = root.CFrame.LookVector
-	local camera = workspace.CurrentCamera
-	if camera then
-		direction = camera.CFrame.LookVector
-	end
+	local reach = if AimRules.IsGround(abilityId) then AimRules.PlaceRange else math.max(ability.range, 20)
+	local direction, aimPoint = readAim(reach)
 	local moveDirection = humanoid.MoveDirection
 
 	if ability.cooldown > 0 then
 		optimisticEnds[abilityId] = workspace:GetServerTimeNow() + ability.cooldown
 	end
-	VfxClient.Predict(abilityId, root.Position + Vector3.new(0, 1.2, 0), direction, castId)
+	local effectOrigin = root.Position + Vector3.new(0, 1.2, 0)
+	local effectEnd = if AimRules.IsGround(abilityId) then aimPoint else nil
+	VfxClient.Predict(abilityId, effectOrigin, direction, castId, effectEnd)
 	if predictMove(castId, abilityId, direction, moveDirection) then
 		afterimages()
 	end
@@ -189,6 +223,7 @@ function AbilityClient.Cast(slot: number)
 		action = Actions.Cast,
 		slot = slot,
 		direction = direction,
+		aimPoint = aimPoint,
 		moveDirection = moveDirection,
 		castId = castId,
 	})
@@ -239,6 +274,17 @@ function afterimages()
 	end)
 end
 
+function AbilityClient.ReturnToMenu()
+	actionEvent:FireServer({ action = Actions.ReturnToMenu })
+end
+
+function AbilityClient.SetOutfit(outfit: { [string]: any })
+	actionEvent:FireServer({
+		action = Actions.SetOutfit,
+		outfit = outfit,
+	})
+end
+
 function AbilityClient.M1()
 	local character = player.Character
 	if not character or character:GetAttribute("Stunned") == true then
@@ -247,9 +293,10 @@ function AbilityClient.M1()
 	if character:GetAttribute("Blocking") == true then
 		return
 	end
+	local direction = select(1, readAim(12))
 	actionEvent:FireServer({
 		action = Actions.M1,
-		direction = aimDirection(),
+		direction = direction,
 	})
 end
 
@@ -386,6 +433,12 @@ function AbilityClient.Start()
 				setStatus("Loadout saved.")
 			elseif payload.ok == true and payload.reason == "Class set." then
 				setStatus("Class set.")
+			elseif payload.ok == true and payload.reason == "Menu" then
+				if onMenu then
+					onMenu()
+				end
+			elseif payload.ok == true and payload.reason == "Outfit saved." then
+				setStatus("Outfit saved.")
 			end
 		end
 	end)

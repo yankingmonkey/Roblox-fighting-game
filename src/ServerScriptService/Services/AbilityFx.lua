@@ -231,8 +231,11 @@ function AbilityFx.Aoe(ctx: CastContext)
 	if stats.superArmor and stats.superArmor > 0 then
 		StatusService.ApplySuperArmor(ctx.character, stats.superArmor)
 	end
-	HitboxService.Radius(ctx, stats.damage or 0, stats, ctx.root.Position)
-	VfxRelay.Play(ctx, { vfx = "aoe" })
+	local Replicated = game:GetService("ReplicatedStorage").FightingClasses
+	local AimRules = require(Replicated.Shared.AimRules)
+	local at = if AimRules.IsGround(ctx.ability.id) then ctx.aimPoint else ctx.root.Position
+	HitboxService.Radius(ctx, stats.damage or 0, stats, at)
+	VfxRelay.Play(ctx, { vfx = "aoe", endPosition = at })
 end
 
 function AbilityFx.Cone(ctx: CastContext)

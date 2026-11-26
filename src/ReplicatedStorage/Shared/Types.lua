@@ -47,6 +47,7 @@ export type CastContext = {
 	ability: AbilityDefinition,
 	origin: Vector3,
 	direction: Vector3,
+	aimPoint: Vector3,
 	moveDirection: Vector3,
 	slot: number,
 	castId: string,
@@ -89,9 +90,17 @@ export type ClassInfo = {
 	defaultLoadout: { string },
 }
 
+export type OutfitSlot = {
+	id: string,
+	r: number,
+	g: number,
+	b: number,
+}
+
 export type SaveData = {
 	classId: string,
 	loadout: { string },
+	outfit: { [string]: OutfitSlot },
 }
 
 return {}

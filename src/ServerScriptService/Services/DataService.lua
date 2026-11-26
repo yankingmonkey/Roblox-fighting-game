@@ -117,16 +117,30 @@ function DataService.Load(player: Player): SaveData
 
 	local classId = ""
 	local slots = { "", "", "", "", "" }
+	local outfit: { [string]: Types.OutfitSlot } = {}
 	if typeof(loaded) == "table" then
 		if typeof(loaded.classId) == "string" then
 			classId = loaded.classId
 		end
 		slots = copySlots(loaded.loadout)
+		if typeof(loaded.outfit) == "table" then
+			for category, raw in loaded.outfit do
+				if typeof(category) == "string" and typeof(raw) == "table" and typeof(raw.id) == "string" then
+					outfit[category] = {
+						id = raw.id,
+						r = if typeof(raw.r) == "number" then raw.r else 1,
+						g = if typeof(raw.g) == "number" then raw.g else 1,
+						b = if typeof(raw.b) == "number" then raw.b else 1,
+					}
+				end
+			end
+		end
 	end
 
 	local data: SaveData = {
 		classId = classId,
 		loadout = slots,
+		outfit = outfit,
 	}
 	session[player] = data
 	return data
@@ -137,9 +151,11 @@ function DataService.Get(player: Player): SaveData?
 end
 
 function DataService.Set(player: Player, data: SaveData, markDirty: boolean)
+	local previous = session[player]
 	session[player] = {
 		classId = data.classId,
 		loadout = table.clone(data.loadout),
+		outfit = data.outfit or (if previous then previous.outfit else {}),
 	}
 	if markDirty then
 		dirty[player] = true
@@ -160,6 +176,7 @@ function DataService.Save(player: Player)
 	local payload = {
 		classId = data.classId,
 		loadout = table.clone(data.loadout),
+		outfit = data.outfit,
 	}
 	for attempt = 1, MAX_ATTEMPTS do
 		local ok, err = pcall(function()

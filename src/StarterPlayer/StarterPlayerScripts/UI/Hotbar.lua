@@ -170,6 +170,11 @@ function Hotbar.Mount(gui: ScreenGui)
 		return button
 	end
 
+	local menuButton = side("Menu", 0.68, 0.02)
+	menuButton.Size = UDim2.fromScale(0.31, 0.14)
+	menuButton.Activated:Connect(function()
+		AbilityClient.ReturnToMenu()
+	end)
 	local attack = side("Attack", 0.68, 0.18)
 	local dash = side("Dash", 0.84, 0.18)
 	local blockButton = side("Block", 0.68, 0.42)

@@ -87,7 +87,7 @@ function BasicCombat.HandleM1(player: Player, payload: { [string]: any })
 		})
 	end
 	CombatService.TagPlayer(player)
-	PoseService.Play(character, "Punch" .. tostring(index), 0.38)
+	PoseService.Play(character, "Punch" .. tostring(index), 0.62)
 end
 
 function BasicCombat.HandleDash(player: Player, payload: { [string]: any })

@@ -10,6 +10,8 @@ local Actions = require(Replicated.Shared.Actions)
 local AbilityRegistry = require(Replicated.Shared.AbilityRegistry)
 local Balance = require(Replicated.Shared.Balance)
 local LoadoutUtil = require(Replicated.Shared.LoadoutUtil)
+local AimMath = require(Replicated.Shared.AimMath)
+local AimRules = require(Replicated.Shared.AimRules)
 local MovementMath = require(Replicated.Shared.MovementMath)
 local Types = require(Replicated.Shared.Types)
 local Util = require(Replicated.Shared.Util)
@@ -177,6 +179,12 @@ function AbilityService.HandleCast(player: Player, payload: { [string]: any })
 		writeCooldowns(player)
 	end
 
+	local aimStyle = AimRules.Style(ability.id, ability.kind, ability.vfx)
+	local aimDirection, aimPoint = MovementMath.SanitizeDirection(payload.direction, root.CFrame.LookVector), root.Position
+	if aimStyle ~= "self" then
+		aimDirection, aimPoint = AimMath.Resolve(root, ability.range, payload.direction, payload.aimPoint, aimStyle == "ground")
+	end
+
 	local ctx: CastContext = {
 		player = player,
 		character = character,
@@ -184,7 +192,8 @@ function AbilityService.HandleCast(player: Player, payload: { [string]: any })
 		root = root,
 		ability = ability,
 		origin = root.Position + Vector3.new(0, 1.2, 0),
-		direction = MovementMath.SanitizeDirection(payload.direction, root.CFrame.LookVector),
+		direction = aimDirection,
+		aimPoint = aimPoint,
 		moveDirection = MovementMath.SanitizeMove(payload.moveDirection),
 		slot = slot,
 		castId = castId,

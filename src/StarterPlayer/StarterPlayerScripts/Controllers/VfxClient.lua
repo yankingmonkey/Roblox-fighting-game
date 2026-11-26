@@ -27,13 +27,14 @@ local function trackOf(castId: string?): Track?
 	return item
 end
 
-function VfxClient.Predict(abilityId: string, origin: Vector3, direction: Vector3, castId: string)
+function VfxClient.Predict(abilityId: string, origin: Vector3, direction: Vector3, castId: string, endPosition: Vector3?)
 	local ability = AbilityRegistry.Get(abilityId)
 	VfxThemes.Play({
 		abilityId = abilityId,
 		origin = origin,
 		direction = direction,
 		castId = castId,
+		endPosition = endPosition,
 		vfx = if ability then ability.vfx else nil,
 	}, true)
 	if ability and ability.vfx == "channelBeam" then

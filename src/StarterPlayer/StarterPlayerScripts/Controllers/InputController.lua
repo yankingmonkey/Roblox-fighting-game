@@ -23,7 +23,7 @@ local SLOT_KEYS: { [Enum.KeyCode]: number } = {
 
 local InputController = {}
 
-function InputController.Start(isMenuOpen: () -> boolean, toggleLoadout: () -> ())
+function InputController.Start(isMenuOpen: () -> boolean, toggleLoadout: () -> (), actionMenu: () -> ())
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 		if processed then
 			return
@@ -54,6 +54,10 @@ function InputController.Start(isMenuOpen: () -> boolean, toggleLoadout: () -> (
 			AbilityClient.Parry()
 		elseif input.KeyCode == Enum.KeyCode.LeftShift then
 			AbilityClient.Dash()
+		elseif input.KeyCode == Enum.KeyCode.M then
+			actionMenu()
+		elseif input.KeyCode == Enum.KeyCode.V then
+			AbilityClient.SetShiftLock(not AbilityClient.ShiftLock())
 		end
 	end)
 

@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 
 local AnimationConfig = require(game:GetService("ReplicatedStorage").FightingClasses.Shared.AnimationConfig)
 local Util = require(game:GetService("ReplicatedStorage").FightingClasses.Shared.Util)
+local PoseLibrary = require(script.Parent.PoseLibrary)
 
 local MOTOR_NAMES = {
 	"Waist",
@@ -291,7 +292,7 @@ local function apply(character: Model, dt: number)
 	end
 	local root = Util.Root(character)
 	local moving = root ~= nil and root.AssemblyLinearVelocity.Magnitude > 10
-	local pose = poseNow(name, alpha, moving)
+	local pose = PoseLibrary.Sample(name, alpha) or poseNow(name, alpha, moving)
 	if not pose then
 		return
 	end

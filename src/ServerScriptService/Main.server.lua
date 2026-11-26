@@ -12,6 +12,7 @@ local ClassService = require(script.Parent.Services.ClassService)
 local CombatService = require(script.Parent.Services.CombatService)
 local DataService = require(script.Parent.Services.DataService)
 local EnergyService = require(script.Parent.Services.EnergyService)
+local OutfitService = require(script.Parent.Services.OutfitService)
 local PoseService = require(script.Parent.Services.PoseService)
 
 DataService.Start()
@@ -21,6 +22,7 @@ AbilityService.Start()
 ClassService.Start()
 BasicCombat.Start()
 PoseService.Start()
+OutfitService.Start()
 
 Remotes.Action.OnServerEvent:Connect(function(player: Player, payload: any)
 	if typeof(payload) ~= "table" then
@@ -41,6 +43,10 @@ Remotes.Action.OnServerEvent:Connect(function(player: Player, payload: any)
 		BasicCombat.HandleM1(player, payload)
 	elseif action == Actions.Dash then
 		BasicCombat.HandleDash(player, payload)
+	elseif action == Actions.ReturnToMenu then
+		ClassService.ReturnToMenu(player)
+	elseif action == Actions.SetOutfit then
+		require(script.Parent.Services.OutfitService).HandleSet(player, payload)
 	end
 end)
 

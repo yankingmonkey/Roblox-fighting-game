@@ -14,6 +14,7 @@ local ClassSelect = {}
 
 local panel: Frame? = nil
 local switching = false
+local picking = false
 local chosenId = ""
 local refreshView: () -> () = function() end
 
@@ -23,6 +24,11 @@ end
 
 function ClassSelect.ShowSwitcher()
 	switching = true
+	refreshView()
+end
+
+function ClassSelect.OpenForPick()
+	picking = true
 	refreshView()
 end
 
@@ -60,6 +66,7 @@ function ClassSelect.Mount(gui: ScreenGui)
 	UiKit.Corner(closeButton, 8)
 	closeButton.Activated:Connect(function()
 		switching = false
+		picking = false
 		chosenId = ""
 		frame.Visible = false
 	end)
@@ -189,23 +196,17 @@ function ClassSelect.Mount(gui: ScreenGui)
 	local function refresh()
 		local classId = player:GetAttribute("ClassId")
 		local inCombat = player:GetAttribute("InCombat") == true
-		closeButton.Visible = switching and typeof(classId) == "string" and classId ~= ""
-		if switching then
+		closeButton.Visible = (switching or picking) and typeof(classId) == "string" and classId ~= ""
+		if switching or picking then
 			frame.Visible = true
-			title.Text = "Change class"
-			scroll.Visible = true
-			confirm.Visible = true
-		elseif classId == nil then
-			frame.Visible = true
-			title.Text = "Loading your fighter..."
-			scroll.Visible = false
-			confirm.Visible = false
-		elseif classId == "" then
-			frame.Visible = true
-			title.Text = "Choose your class"
-			scroll.Visible = true
-			confirm.Visible = true
-			switching = false
+			title.Text = if switching then "Change class" else "Choose your class"
+			scroll.Visible = classId ~= nil
+			confirm.Visible = classId ~= nil
+			if classId == nil then
+				title.Text = "Loading your fighter..."
+			end
+		elseif classId == nil or classId == "" then
+			frame.Visible = false
 		else
 			frame.Visible = false
 			switching = false
@@ -231,6 +232,7 @@ function ClassSelect.Mount(gui: ScreenGui)
 	player:GetAttributeChangedSignal("ClassId"):Connect(function()
 		-- A new class id means the server accepted the choice, so close the picker.
 		switching = false
+		picking = false
 		chosenId = ""
 		refresh()
 	end)
