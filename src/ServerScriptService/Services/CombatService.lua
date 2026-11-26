@@ -21,6 +21,7 @@ local Players = game:GetService("Players")
 
 local Replicated = game:GetService("ReplicatedStorage").FightingClasses
 local Actions = require(Replicated.Shared.Actions)
+local AnimationConfig = require(Replicated.Shared.AnimationConfig)
 local Balance = require(Replicated.Shared.Balance)
 local StatusService = require(script.Parent.StatusService)
 local Util = require(Replicated.Shared.Util)
@@ -208,9 +209,31 @@ function CombatService.ApplyDamage(attacker: Player, target: Model, rawDamage: n
 
 	if amount > 0 and target:GetAttribute("IsClone") ~= true then
 		local heavy = (info.knockback or 0) >= 20
-		PoseService.Play(target, if heavy then "Knockback" else "Hit", if heavy then 0.5 else 0.28)
+		local attackerRoot = attacker.Character and Util.Root(attacker.Character)
+		if attackerRoot then
+			target:SetAttribute("HitFrom", attackerRoot.Position)
+		end
+		PoseService.Play(target, if heavy then "Knockback" else "Hit", if heavy then 0.45 else 0.22)
 		local victim = ownerOf(target)
 		local targetRoot = Util.Root(target)
+		local feel = AnimationConfig.Feel(if typeof(info.abilityId) == "string" then info.abilityId else "Punch1")
+		local impactPos = if targetRoot then targetRoot.Position else target:GetPivot().Position
+		Remotes.TellAll({
+			action = Actions.HitFeel,
+			abilityId = info.abilityId,
+			position = impactPos,
+			attackerUserId = attacker.UserId,
+			victimUserId = if victim then victim.UserId else 0,
+			hitstop = feel.hitstop,
+			victimHitstop = feel.victimHitstop,
+			impactFrame = feel.impactFrame,
+			impactFrameDuration = feel.impactFrameDuration,
+			shakeAmplitude = feel.shakeAmplitude,
+			shakeDuration = feel.shakeDuration,
+			fovDelta = feel.fovDelta,
+			fovDuration = feel.fovDuration,
+			ultimateCamera = feel.ultimateCamera,
+		})
 		Remotes.TellAll({
 			action = Actions.Impact,
 			position = if targetRoot then targetRoot.Position else target:GetPivot().Position,

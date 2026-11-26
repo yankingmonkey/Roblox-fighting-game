@@ -4,6 +4,7 @@
 local StarterGui = game:GetService("StarterGui")
 
 local AbilityClient = require(script.Parent.Controllers.AbilityClient)
+local CombatFeel = require(script.Parent.Controllers.CombatFeel)
 local InputController = require(script.Parent.Controllers.InputController)
 local MovementClient = require(script.Parent.Controllers.MovementClient)
 local ProceduralAnim = require(script.Parent.Controllers.ProceduralAnim)
@@ -29,6 +30,7 @@ gui.Parent = playerGui
 UiKit.BindScale(gui)
 
 AbilityClient.Start()
+CombatFeel.Start()
 MovementClient.Start()
 ProceduralAnim.Start()
 VfxClient.Start()

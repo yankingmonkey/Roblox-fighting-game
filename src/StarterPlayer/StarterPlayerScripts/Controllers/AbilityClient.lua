@@ -13,6 +13,8 @@ local LoadoutUtil = require(Shared:WaitForChild("LoadoutUtil"))
 local MovementMath = require(Shared:WaitForChild("MovementMath"))
 local Util = require(Shared:WaitForChild("Util"))
 local AimRules = require(Shared:WaitForChild("AimRules"))
+local AnimationConfig = require(Shared:WaitForChild("AnimationConfig"))
+local HandOrigin = require(Shared:WaitForChild("HandOrigin"))
 local Classes = require(Shared:WaitForChild("Classes"))
 local VfxClient = require(script.Parent.VfxClient)
 local VfxKit = require(script.Parent.VfxKit)
@@ -28,6 +30,7 @@ local savedCFrame: { [string]: CFrame } = {}
 local savedDash: CFrame? = nil
 local afterimages: () -> ()
 local castAbility: { [string]: string } = {}
+local cancelledCast: { [string]: boolean } = {}
 local castSerial = 0
 local blocking = false
 local onMenu: (() -> ())? = nil
@@ -212,9 +215,15 @@ function AbilityClient.Cast(slot: number)
 	if ability.cooldown > 0 then
 		optimisticEnds[abilityId] = workspace:GetServerTimeNow() + ability.cooldown
 	end
-	local effectOrigin = root.Position + Vector3.new(0, 1.2, 0)
 	local effectEnd = if AimRules.IsGround(abilityId) then aimPoint else nil
-	VfxClient.Predict(abilityId, effectOrigin, direction, castId, effectEnd)
+	local hands = AnimationConfig.Feel(abilityId).hands
+	task.delay(AnimationConfig.ImpactAt(abilityId), function()
+		if cancelledCast[castId] or not character.Parent then
+			return
+		end
+		local origin = HandOrigin.From(character, hands, root)
+		VfxClient.Predict(abilityId, origin, direction, castId, effectEnd)
+	end)
 	if predictMove(castId, abilityId, direction, moveDirection) then
 		afterimages()
 	end
@@ -370,6 +379,7 @@ local function onCastResult(payload: { [string]: any })
 	else
 		local reason = if typeof(payload.reason) == "string" then payload.reason else "Can't do that."
 		setStatus(reason)
+		cancelledCast[castId] = true
 		VfxClient.Stop(castId)
 		if abilityId ~= "" then
 			optimisticEnds[abilityId] = nil

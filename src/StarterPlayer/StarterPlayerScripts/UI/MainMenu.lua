@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local AbilityClient = require(script.Parent.Parent.Controllers.AbilityClient)
+local ClientSettings = require(script.Parent.Parent.Controllers.ClientSettings)
 local VfxKit = require(script.Parent.Parent.Controllers.VfxKit)
 local UiKit = require(script.Parent.UiKit)
 local ClassDecor = require(script.Parent.ClassDecor)
@@ -128,6 +129,16 @@ function MainMenu.Mount(gui: ScreenGui, openClasses: () -> (), openLoadout: () -
 		shakeOn = not shakeOn
 		shake.Text = if shakeOn then "Camera shake: On" else "Camera shake: Off"
 		VfxKit.SetShakeEnabled(shakeOn)
+		ClientSettings.Shake = shakeOn
+	end)
+
+	local flashes = UiKit.Button(settings, "Impact flashes: On")
+	flashes.Position = UDim2.fromScale(0, 0.9)
+	flashes.Size = UDim2.fromScale(1, 0.2)
+	UiKit.Corner(flashes, 8)
+	flashes.Activated:Connect(function()
+		ClientSettings.ImpactFlashes = not ClientSettings.ImpactFlashes
+		flashes.Text = if ClientSettings.ImpactFlashes then "Impact flashes: On" else "Impact flashes: Off"
 	end)
 
 	local aimMode = UiKit.Button(settings, "Aim mode: Mouse")

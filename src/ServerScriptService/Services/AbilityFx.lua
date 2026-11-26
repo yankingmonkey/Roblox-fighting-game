@@ -5,10 +5,13 @@
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 
-local Balance = require(game:GetService("ReplicatedStorage").FightingClasses.Shared.Balance)
-local MovementMath = require(game:GetService("ReplicatedStorage").FightingClasses.Shared.MovementMath)
-local Types = require(game:GetService("ReplicatedStorage").FightingClasses.Shared.Types)
-local Util = require(game:GetService("ReplicatedStorage").FightingClasses.Shared.Util)
+local Replicated = game:GetService("ReplicatedStorage").FightingClasses
+local AnimationConfig = require(Replicated.Shared.AnimationConfig)
+local Balance = require(Replicated.Shared.Balance)
+local HandOrigin = require(Replicated.Shared.HandOrigin)
+local MovementMath = require(Replicated.Shared.MovementMath)
+local Types = require(Replicated.Shared.Types)
+local Util = require(Replicated.Shared.Util)
 local CombatService = require(script.Parent.CombatService)
 local HitboxService = require(script.Parent.HitboxService)
 local StatusService = require(script.Parent.StatusService)
@@ -31,6 +34,23 @@ local function casterOk(ctx: CastContext): boolean
 		return false
 	end
 	return true
+end
+
+local function armOrigin(ctx: CastContext): Vector3
+	local feel = AnimationConfig.Feel(ctx.ability.id)
+	return HandOrigin.From(ctx.character, feel.hands, ctx.root)
+end
+
+-- Hitboxes and release VFX wait until the contact time in MoveAnims.
+local function onRelease(ctx: CastContext, callback: () -> ())
+	local delayTime = AnimationConfig.ImpactAt(ctx.ability.id)
+	task.delay(delayTime, function()
+		if not casterOk(ctx) then
+			return
+		end
+		ctx.origin = armOrigin(ctx)
+		callback()
+	end)
 end
 
 local function actorFolder(): Folder
@@ -143,19 +163,23 @@ end
 
 function AbilityFx.Projectile(ctx: CastContext)
 	local stats = tuning(ctx)
-	local count = stats.projectiles or 1
-	local directions = Util.SpreadDirections(ctx.direction, count, stats.spreadDeg or 0)
-	for _, direction in directions do
-		HitboxService.LaunchProjectile(ctx, direction, stats)
-	end
-	VfxRelay.Play(ctx, { vfx = "projectile" })
+	onRelease(ctx, function()
+		local count = stats.projectiles or 1
+		local directions = Util.SpreadDirections(ctx.direction, count, stats.spreadDeg or 0)
+		for _, direction in directions do
+			HitboxService.LaunchProjectile(ctx, direction, stats)
+		end
+		VfxRelay.Play(ctx, { vfx = "projectile", origin = ctx.origin })
+	end)
 end
 
 function AbilityFx.Beam(ctx: CastContext)
 	local stats = tuning(ctx)
-	local origin = Util.HeadPosition(ctx.character)
-	local endPos = HitboxService.RayDamage(ctx, stats.damage or 0, stats, origin, ctx.direction, stats.range or 70)
-	VfxRelay.Play(ctx, { vfx = "beam", origin = origin, endPosition = endPos })
+	onRelease(ctx, function()
+		local origin = armOrigin(ctx)
+		local endPos = HitboxService.RayDamage(ctx, stats.damage or 0, stats, origin, ctx.direction, stats.range or 70)
+		VfxRelay.Play(ctx, { vfx = "beam", origin = origin, endPosition = endPos })
+	end)
 end
 
 function AbilityFx.ChannelBeam(ctx: CastContext)
@@ -167,13 +191,17 @@ function AbilityFx.ChannelBeam(ctx: CastContext)
 	local startLook = ctx.root.CFrame
 
 	task.spawn(function()
+		local windup = AnimationConfig.ImpactAt(ctx.ability.id)
+		if windup > 0 then
+			task.wait(windup)
+		end
 		for tickIndex = 1, ticks do
 			if not casterOk(ctx) then
 				-- Stun (or death) cuts the beam off. Energy was already spent.
 				VfxRelay.Stop(ctx)
 				break
 			end
-			local origin = Util.HeadPosition(ctx.character)
+			local origin = armOrigin(ctx)
 			local direction: Vector3
 			if sweep then
 				local span = math.rad(sweep)
@@ -200,8 +228,10 @@ function AbilityFx.Melee(ctx: CastContext)
 	if stats.superArmor and stats.superArmor > 0 then
 		StatusService.ApplySuperArmor(ctx.character, stats.superArmor)
 	end
-	HitboxService.Melee(ctx, stats.damage or 0, stats, nil)
-	VfxRelay.Play(ctx, { vfx = "melee" })
+	onRelease(ctx, function()
+		HitboxService.Melee(ctx, stats.damage or 0, stats, nil)
+		VfxRelay.Play(ctx, { vfx = "melee", origin = ctx.origin })
+	end)
 end
 
 function AbilityFx.Flurry(ctx: CastContext)
@@ -214,13 +244,20 @@ function AbilityFx.Flurry(ctx: CastContext)
 		ctx.move = { kind = "dash", position = goal.Position, look = goal.LookVector }
 		fromPosition = goal.Position
 	end
-	VfxRelay.Play(ctx, { vfx = "flurry" })
 	task.spawn(function()
+		local windup = AnimationConfig.ImpactAt(ctx.ability.id)
+		if windup > 0 then
+			task.wait(windup)
+		end
 		for _ = 1, hits do
 			if not casterOk(ctx) then
 				break
 			end
-			HitboxService.Melee(ctx, perHit, stats, fromPosition)
+			if casterOk(ctx) then
+				ctx.origin = armOrigin(ctx)
+				HitboxService.Melee(ctx, perHit, stats, fromPosition)
+				VfxRelay.Play(ctx, { vfx = "melee", origin = ctx.origin, castId = ctx.castId .. "-f" })
+			end
 			task.wait(stats.tickInterval or 0.08)
 		end
 	end)
@@ -231,17 +268,20 @@ function AbilityFx.Aoe(ctx: CastContext)
 	if stats.superArmor and stats.superArmor > 0 then
 		StatusService.ApplySuperArmor(ctx.character, stats.superArmor)
 	end
-	local Replicated = game:GetService("ReplicatedStorage").FightingClasses
 	local AimRules = require(Replicated.Shared.AimRules)
-	local at = if AimRules.IsGround(ctx.ability.id) then ctx.aimPoint else ctx.root.Position
-	HitboxService.Radius(ctx, stats.damage or 0, stats, at)
-	VfxRelay.Play(ctx, { vfx = "aoe", endPosition = at })
+	onRelease(ctx, function()
+		local at = if AimRules.IsGround(ctx.ability.id) then ctx.aimPoint else ctx.root.Position
+		HitboxService.Radius(ctx, stats.damage or 0, stats, at)
+		VfxRelay.Play(ctx, { vfx = "aoe", endPosition = at, origin = ctx.origin })
+	end)
 end
 
 function AbilityFx.Cone(ctx: CastContext)
 	local stats = tuning(ctx)
-	HitboxService.Melee(ctx, stats.damage or 0, stats, nil)
-	VfxRelay.Play(ctx, { vfx = "cone" })
+	onRelease(ctx, function()
+		HitboxService.Melee(ctx, stats.damage or 0, stats, nil)
+		VfxRelay.Play(ctx, { vfx = "cone", origin = ctx.origin })
+	end)
 end
 
 function AbilityFx.Dash(ctx: CastContext)
@@ -256,7 +296,10 @@ function AbilityFx.Dash(ctx: CastContext)
 		StatusService.ApplySuperArmor(ctx.character, stats.superArmor)
 	end
 	if stats.damage and stats.damage > 0 then
-		HitboxService.Path(ctx, stats.damage, stats, goal.Position)
+		local goalPos = goal.Position
+		onRelease(ctx, function()
+			HitboxService.Path(ctx, stats.damage :: number, stats, goalPos)
+		end)
 	end
 	if stats.leaveLog then
 		spawnLog(ctx.root.Position)
@@ -279,7 +322,9 @@ function AbilityFx.Buff(ctx: CastContext)
 	if stats.iframe and stats.iframe > 0 then
 		StatusService.ApplyIFrames(ctx.character, stats.iframe)
 	end
-	VfxRelay.Play(ctx, { vfx = "buff" })
+	onRelease(ctx, function()
+		VfxRelay.Play(ctx, { vfx = "buff", origin = armOrigin(ctx) })
+	end)
 end
 
 function AbilityFx.ToggleFlight(ctx: CastContext): boolean?
@@ -317,8 +362,10 @@ function AbilityFx.DiveBomb(ctx: CastContext)
 		}
 		ctx.character:SetAttribute("Flying", false)
 	end
-	HitboxService.Radius(ctx, damage, stats, ground + Vector3.new(0, 2, 0))
-	VfxRelay.Play(ctx, { vfx = "dive", endPosition = ground })
+	onRelease(ctx, function()
+		HitboxService.Radius(ctx, damage, stats, ground + Vector3.new(0, 2, 0))
+		VfxRelay.Play(ctx, { vfx = "dive", endPosition = ground, origin = armOrigin(ctx) })
+	end)
 end
 
 local function nearestEnemy(owner: Player, fromPosition: Vector3): Model?

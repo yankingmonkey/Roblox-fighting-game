@@ -18,6 +18,7 @@ local Actions = {
 	Vfx = "Vfx",
 	VfxStop = "VfxStop",
 	Impact = "Impact",
+	HitFeel = "HitFeel",
 	MenuResult = "MenuResult",
 }
 

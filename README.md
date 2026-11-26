@@ -34,7 +34,7 @@ Shots and beams go where the cursor is. Projectiles take time to arrive, so you 
 
 The title screen has Play, Classes, Loadout, Customize, and Settings (volume, camera shake, aim mode). Customize dresses your R15 character with made-in-code pieces. The server welds them on so other players see them, and they save with your class. To use a mesh later, set `assetId` on that item in `src/ReplicatedStorage/Shared/OutfitCatalog.lua` (the builder still draws the part shape today).
 
-Each move has its own pose sequence. To replace one with your uploaded animation, add a line to `AnimationConfig.Overrides` using the ability id, for example `HeavyPunch = "rbxassetid://123"`. `Punch1` through `Punch4` are the click combo.
+Each move has its own authored pose in `src/ReplicatedStorage/Shared/MoveAnims.lua`: both hands chamber and push for blasts, a braced hand for one-handed throws, and the head for eye beams. The shot leaves the hands (or the eyes) when the contact pose hits, and the server opens the hitbox at that same time. Hitstop freezes both fighters for a few frames. Heavies and ultimates flash the screen, shake the camera, and punch the field of view. Turn flashes off under Settings if they bother you. To replace a pose with your uploaded animation, set `AnimationConfig.Overrides` to that ability id, for example `HeavyPunch = "rbxassetid://123"`. `Punch1` through `Punch4` are the click combo. The feel timings stay in `MoveAnims` even when a clip is playing.
 
 The class screen covers the game until a class is chosen. **Change class** in the loadout menu opens it again. The server says no if you are still in combat (about 8 seconds after a hit or a cast).
 

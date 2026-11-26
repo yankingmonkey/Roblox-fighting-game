@@ -23,12 +23,32 @@ local overrides: { [string]: string } = {
 	Block = "",
 }
 
+local MoveAnims = require(script.Parent.MoveAnims)
+
 local AnimationConfig = {
 	Overrides = overrides,
+	-- Screen shake strength for CombatFeel. Settings can scale this 0 to 1.
+	ShakeScale = 1,
+	-- Photosensitivity. Settings turns impact flashes off.
+	ImpactFlashes = true,
 }
 
 function AnimationConfig.Clip(poseName: string): string
 	return overrides[poseName] or ""
+end
+
+function AnimationConfig.Feel(moveId: string)
+	return MoveAnims[moveId] or MoveAnims.Punch1
+end
+
+function AnimationConfig.ImpactAt(moveId: string): number
+	local feel = AnimationConfig.Feel(moveId)
+	return feel.anticipation + feel.smear
+end
+
+function AnimationConfig.Length(moveId: string): number
+	local feel = AnimationConfig.Feel(moveId)
+	return feel.anticipation + feel.smear + feel.contact + feel.recovery
 end
 
 return AnimationConfig

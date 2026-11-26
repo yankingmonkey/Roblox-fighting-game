@@ -4,6 +4,7 @@
 -- instead and this script leaves the body alone for that action.
 -- Tweak the CFrames in the pose functions if a limb bends the wrong way.
 
+local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
@@ -232,7 +233,52 @@ local function poseNow(name: string, alpha: number, moving: boolean): Pose?
 	return nil
 end
 
+type Clock = {
+	token: number,
+	elapsed: number,
+	pausedUntil: number,
+	smeared: boolean,
+}
+
+local clocks: { [Model]: Clock } = {}
+
+local function smearGhost(character: Model)
+	local folder = workspace:FindFirstChild("FightingClassVfx")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "FightingClassVfx"
+		folder.Parent = workspace
+	end
+	for _, limbName in { "RightHand", "LeftHand", "RightLowerArm", "LeftLowerArm" } do
+		local limb = character:FindFirstChild(limbName)
+		if limb and limb:IsA("BasePart") then
+			local ghost = Instance.new("Part")
+			ghost.Name = "Smear"
+			ghost.Size = limb.Size
+			ghost.CFrame = limb.CFrame
+			ghost.Color = limb.Color
+			ghost.Material = Enum.Material.Neon
+			ghost.Transparency = 0.55
+			ghost.Anchored = true
+			ghost.CanCollide = false
+			ghost.CanQuery = false
+			ghost.CanTouch = false
+			ghost.Parent = folder
+			Debris:AddItem(ghost, 0.045)
+		end
+	end
+end
+
 local ProceduralAnim = {}
+
+function ProceduralAnim.Pause(character: Model, seconds: number)
+	local clock = clocks[character]
+	if not clock then
+		clock = { token = -999, elapsed = 0, pausedUntil = 0, smeared = false }
+		clocks[character] = clock
+	end
+	clock.pausedUntil = math.max(clock.pausedUntil, os.clock() + seconds)
+end
 
 local function weightFor(character: Model, active: boolean): number
 	if character:GetAttribute("Ragdoll") == true then
@@ -258,15 +304,23 @@ local function weightFor(character: Model, active: boolean): number
 end
 
 local function apply(character: Model, dt: number)
-	local now = workspace:GetServerTimeNow()
 	local poseName = character:GetAttribute("Pose")
-	local started = character:GetAttribute("PoseStart")
+	local tokenAttr = character:GetAttribute("PoseToken")
 	local duration = character:GetAttribute("PoseDuration")
+	local token = if typeof(tokenAttr) == "number" then tokenAttr else 0
+	local clock = clocks[character]
+	if not clock or clock.token ~= token then
+		clock = { token = token, elapsed = 0, pausedUntil = 0, smeared = false }
+		clocks[character] = clock
+	end
+	if os.clock() >= clock.pausedUntil then
+		clock.elapsed += dt
+	end
+	local elapsed = clock.elapsed
 	local active = false
 	local alpha = 1
-	if typeof(poseName) == "string" and poseName ~= "" and typeof(started) == "number" and typeof(duration) == "number" then
-		local elapsed = now - started
-		if elapsed >= 0 and elapsed <= duration and AnimationConfig.Clip(poseName) == "" then
+	if typeof(poseName) == "string" and poseName ~= "" and typeof(duration) == "number" and AnimationConfig.Clip(poseName) == "" then
+		if elapsed <= duration then
 			active = true
 			alpha = math.clamp(elapsed / math.max(duration, 0.05), 0, 1)
 		end
@@ -292,12 +346,38 @@ local function apply(character: Model, dt: number)
 	end
 	local root = Util.Root(character)
 	local moving = root ~= nil and root.AssemblyLinearVelocity.Magnitude > 10
-	local pose = PoseLibrary.Sample(name, alpha) or poseNow(name, alpha, moving)
+	local owner = Players:GetPlayerFromCharacter(character)
+	local classId = if owner then Util.ReadString(owner:GetAttribute("ClassId"), "") else ""
+	local pose = if name == "Idle" then PoseLibrary.Stance(classId) else PoseLibrary.Sample(name, elapsed)
+	if not pose then
+		pose = poseNow(name, alpha, moving)
+	end
 	if not pose then
 		return
 	end
+	if (name == "Hit" or name == "Knockback") and root then
+		local from = character:GetAttribute("HitFrom")
+		if typeof(from) == "Vector3" then
+			local flat = Vector3.new(from.X - root.Position.X, 0, from.Z - root.Position.Z)
+			local side = root.CFrame.RightVector
+			if flat.Magnitude > 0.2 then
+				local yaw = math.clamp(flat.Unit:Dot(side), -1, 1) * 0.7
+				local waist = pose.Waist or CFrame.new()
+				pose.Waist = waist * CFrame.Angles(0.4, yaw, 0)
+			end
+		end
+	end
+	if PoseLibrary.InSmear(name, elapsed) then
+		if not clock.smeared then
+			clock.smeared = true
+			smearGhost(character)
+		end
+	else
+		clock.smeared = false
+	end
 	local joints = motorsOf(character)
-	local blend = math.clamp(weight * (0.55 + (1 - math.exp(-dt * 16))), 0, 1)
+	local snap = PoseLibrary.InSmear(name, elapsed)
+	local blend = if snap then 1 else math.clamp(weight * (0.55 + (1 - math.exp(-dt * 16))), 0, 1)
 	for motorName, motor in joints do
 		local goal = pose[motorName] or CFrame.new()
 		motor.Transform = motor.Transform:Lerp(goal, blend)

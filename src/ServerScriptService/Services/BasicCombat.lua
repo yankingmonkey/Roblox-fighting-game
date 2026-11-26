@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 
 local Replicated = game:GetService("ReplicatedStorage").FightingClasses
 local Actions = require(Replicated.Shared.Actions)
+local AnimationConfig = require(Replicated.Shared.AnimationConfig)
 local Balance = require(Replicated.Shared.Balance)
 local MovementMath = require(Replicated.Shared.MovementMath)
 local CombatService = require(script.Parent.CombatService)
@@ -78,18 +79,29 @@ function BasicCombat.HandleM1(player: Player, payload: { [string]: any })
 	local direction = MovementMath.SanitizeDirection(payload.direction, root.CFrame.LookVector)
 	local flat = MovementMath.FlatLook(root, direction)
 	local reach = Balance.M1.range
-	local center = root.Position + flat * (reach / 2)
-	local box = CFrame.lookAt(center, center + flat)
-	local models = HitboxService.OpponentsInBox(player, character, box, Vector3.new(Balance.M1.width, 6, reach))
-	for _, model in models do
-		CombatService.ApplyDamage(player, model, damage, {
-			knockback = knockbacks[index] or 8,
-			origin = root.Position,
-			abilityId = "M1",
-		})
-	end
+	local poseId = "Punch" .. tostring(index)
 	CombatService.TagPlayer(player)
-	PoseService.Play(character, "Punch" .. tostring(index), 0.62)
+	PoseService.Play(character, poseId, AnimationConfig.Length(poseId))
+	-- The fist is live only around the contact key, not during the wind-up.
+	task.delay(AnimationConfig.ImpactAt(poseId), function()
+		if not character.Parent then
+			return
+		end
+		local liveRoot = character:FindFirstChild("HumanoidRootPart")
+		if not liveRoot or not liveRoot:IsA("BasePart") then
+			return
+		end
+		local center = liveRoot.Position + flat * (reach / 2)
+		local box = CFrame.lookAt(center, center + flat)
+		local models = HitboxService.OpponentsInBox(player, character, box, Vector3.new(Balance.M1.width, 6, reach))
+		for _, model in models do
+			CombatService.ApplyDamage(player, model, damage, {
+				knockback = knockbacks[index] or 8,
+				origin = liveRoot.Position,
+				abilityId = poseId,
+			})
+		end
+	end)
 end
 
 function BasicCombat.HandleDash(player: Player, payload: { [string]: any })

@@ -65,7 +65,7 @@ function PoseService.ForAbility(character: Model, ability: AbilityDefinition)
 		character:SetAttribute("Pose", "")
 		return
 	end
-	PoseService.Play(character, ability.id, if ability.isUltimate then 1.05 else 0.9)
+	PoseService.Play(character, ability.id, AnimationConfig.Length(ability.id))
 end
 
 function PoseService.Start()
