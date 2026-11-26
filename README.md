@@ -24,7 +24,9 @@ Numbers and the “who beats whom” notes are in [BALANCE.md](BALANCE.md).
 | Block / Parry buttons | Same as F and R. |
 | Rise / Drop | Show up when Flight is equipped. Space and Ctrl do the same on a keyboard. |
 
-The HUD is a dark glass panel: health, ki, then five slots. A slot on cooldown has a dark sweep and a white hand. Hover a move in the loadout for its description. Drag it onto a slot, or click it and then click the slot.
+The HUD is one glass dock: your health, your ki, a combo count while you are clicking, and five slots with keybinds and cooldown sweeps. The health of whoever is in front of your camera sits at the top. The dock picks up your class: lightning, orbiting elements, a ki pulse, cracks, smoke, or a red shine. Hover and press on buttons scale and brighten. The title screen reads ROOFTOP ARENA / FIGHTING CLASSES.
+
+Fights happen on a rooftop arena added under Workspace.FightingClasses. Your old baseplate and spawns are left in place. New characters are sent to the roof spawn. Dropping off the building loads you back on the roof. Lighting (sunset, bloom, atmosphere) is optional in `src/Workspace/MapConfig.lua`. Drag it onto a slot, or click it and then click the slot.
 
 Slots 1–4 take any non-ultimate from that class. Q takes one of the two ultimates. The same move cannot sit in two slots. The server checks this again before it saves.
 
@@ -244,6 +246,7 @@ src/StarterPlayer/StarterPlayerScripts/
   Controllers/                Input, prediction, movement, neon effects
   UI/                         Class screen, loadout, hotbar
 src/StarterGui/               Placeholder so Rojo has a StarterGui folder
+src/Workspace/                Rooftop arena. Rojo ignores every other Workspace instance.
 BALANCE.md                    Numbers and counterplay
 ```
 

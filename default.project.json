@@ -28,6 +28,13 @@
       "FightingClasses": {
         "$path": "src/StarterGui"
       }
+    },
+    "Workspace": {
+      "$className": "Workspace",
+      "$ignoreUnknownInstances": true,
+      "FightingClasses": {
+        "$path": "src/Workspace"
+      }
     }
   }
 }

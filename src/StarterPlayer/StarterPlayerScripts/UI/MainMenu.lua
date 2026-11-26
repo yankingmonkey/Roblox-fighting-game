@@ -47,23 +47,48 @@ function MainMenu.Mount(gui: ScreenGui, openClasses: () -> (), openLoadout: () -
 	UiKit.Glow(card, Color3.fromRGB(150, 170, 220))
 	ClassDecor.Attach(card, "KiWarrior")
 
-	local title = UiKit.Label(card, "FIGHTING CLASSES")
-	title.Position = UDim2.fromScale(0.08, 0.06)
-	title.Size = UDim2.fromScale(0.84, 0.12)
-	title.Font = Enum.Font.GothamBold
-	title.TextSize = 28
+	local kicker = UiKit.Label(card, "ROOFTOP ARENA")
+	kicker.Position = UDim2.fromScale(0.1, 0.05)
+	kicker.Size = UDim2.fromScale(0.8, 0.05)
+	kicker.Font = UiKit.FontTitle
+	kicker.TextSize = 12
+	kicker.TextXAlignment = Enum.TextXAlignment.Center
+	kicker.TextColor3 = Color3.fromRGB(255, 196, 120)
+
+	local title = UiKit.Label(card, "FIGHTING")
+	title.Position = UDim2.fromScale(0.08, 0.1)
+	title.Size = UDim2.fromScale(0.84, 0.09)
+	title.Font = UiKit.FontTitle
+	title.TextSize = 36
 	title.TextXAlignment = Enum.TextXAlignment.Center
 
-	local sub = UiKit.Label(card, "Pick a class. Aim with the mouse. Lead your shots.")
-	sub.Position = UDim2.fromScale(0.08, 0.18)
-	sub.Size = UDim2.fromScale(0.84, 0.08)
+	local word = UiKit.Label(card, "CLASSES")
+	word.Position = UDim2.fromScale(0.08, 0.18)
+	word.Size = UDim2.fromScale(0.84, 0.07)
+	word.Font = UiKit.FontTitle
+	word.TextSize = 22
+	word.TextXAlignment = Enum.TextXAlignment.Center
+	word.TextColor3 = Color3.fromRGB(140, 190, 255)
+
+	local rule = Instance.new("Frame")
+	rule.AnchorPoint = Vector2.new(0.5, 0)
+	rule.Position = UDim2.fromScale(0.5, 0.26)
+	rule.Size = UDim2.fromScale(0.28, 0.008)
+	rule.BackgroundColor3 = Color3.fromRGB(255, 196, 120)
+	rule.BorderSizePixel = 0
+	rule.Parent = card
+	UiKit.Corner(rule, 4)
+
+	local sub = UiKit.Label(card, "Aim. Lead the shot. Don't fall off the roof.")
+	sub.Position = UDim2.fromScale(0.08, 0.28)
+	sub.Size = UDim2.fromScale(0.84, 0.06)
 	sub.TextSize = 14
 	sub.TextXAlignment = Enum.TextXAlignment.Center
-	sub.TextColor3 = Color3.fromRGB(180, 190, 210)
+	sub.TextColor3 = UiKit.Muted
 
 	local settings = Instance.new("Frame")
 	settings.Name = "Settings"
-	settings.Position = UDim2.fromScale(0.1, 0.32)
+	settings.Position = UDim2.fromScale(0.1, 0.38)
 	settings.Size = UDim2.fromScale(0.8, 0.5)
 	settings.BackgroundTransparency = 1
 	settings.Visible = false
@@ -116,7 +141,7 @@ function MainMenu.Mount(gui: ScreenGui, openClasses: () -> (), openLoadout: () -
 	end)
 
 	local buttons = Instance.new("Frame")
-	buttons.Position = UDim2.fromScale(0.12, 0.3)
+	buttons.Position = UDim2.fromScale(0.12, 0.36)
 	buttons.Size = UDim2.fromScale(0.76, 0.6)
 	buttons.BackgroundTransparency = 1
 	buttons.Parent = card
@@ -188,6 +213,7 @@ function MainMenu.Mount(gui: ScreenGui, openClasses: () -> (), openLoadout: () -
 		open = true
 		frame.Visible = true
 		showHome()
+		UiKit.Pop(card)
 		TweenService:Create(blur, TweenInfo.new(0.2), { Size = 16 }):Play()
 	end
 

@@ -72,6 +72,8 @@ function BasicCombat.HandleM1(player: Player, payload: { [string]: any })
 	end
 	comboIndex[player] = if index >= #damages then 1 else index + 1
 	comboTime[player] = now
+	player:SetAttribute("ComboStep", index)
+	player:SetAttribute("ComboUntil", workspace:GetServerTimeNow() + Balance.M1.reset)
 
 	local direction = MovementMath.SanitizeDirection(payload.direction, root.CFrame.LookVector)
 	local flat = MovementMath.FlatLook(root, direction)

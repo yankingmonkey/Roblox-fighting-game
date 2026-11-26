@@ -1,10 +1,8 @@
 --!strict
--- Glass hotbar: health, energy, five ability slots, and touch buttons.
+-- Clean fight HUD: health, ki, five slots, combo count, and the foe in front of you.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 
 local Replicated = game:GetService("ReplicatedStorage").FightingClasses
 local AbilityRegistry = require(Replicated.Shared.AbilityRegistry)
@@ -13,6 +11,7 @@ local LoadoutUtil = require(Replicated.Shared.LoadoutUtil)
 local Util = require(Replicated.Shared.Util)
 local AbilityClient = require(script.Parent.Parent.Controllers.AbilityClient)
 local MovementClient = require(script.Parent.Parent.Controllers.MovementClient)
+local ClassDecor = require(script.Parent.ClassDecor)
 local UiKit = require(script.Parent.UiKit)
 
 local KEYS = { "1", "2", "3", "4", "Q" }
@@ -20,175 +19,195 @@ local Hotbar = {}
 
 local function classColor(player: Player): Color3
 	local info = Classes.ById[Util.ReadString(player:GetAttribute("ClassId"), "")]
-	return if info then info.color else Color3.fromRGB(90, 140, 255)
+	return if info then info.color else Color3.fromRGB(120, 160, 255)
 end
 
 function Hotbar.Mount(gui: ScreenGui)
 	local player = Players.LocalPlayer
-	local shownEnergy = 100
 	local shownHealth = 1
+	local shownEnergy = 1
+	local shownTarget = 1
+	local selected = 1
+	local accent = classColor(player)
 
-	local root = Instance.new("Frame")
-	root.Name = "Hotbar"
-	root.AnchorPoint = Vector2.new(0.5, 1)
-	root.Position = UDim2.fromScale(0.5, 0.98)
-	root.Size = UDim2.fromScale(0.62, 0.22)
-	root.BackgroundColor3 = Color3.fromRGB(8, 10, 16)
-	root.BackgroundTransparency = 0.28
-	root.BorderSizePixel = 0
-	root.Parent = gui
-	UiKit.Corner(root, 16)
-	local panelStroke = UiKit.Glow(root, classColor(player))
-	UiKit.Gradient(root, Color3.fromRGB(18, 22, 34), Color3.fromRGB(8, 10, 16), 90)
+	local targetCard = UiKit.Glass(gui, accent)
+	targetCard.Name = "Target"
+	targetCard.AnchorPoint = Vector2.new(0.5, 0)
+	targetCard.Position = UDim2.fromScale(0.5, 0.04)
+	targetCard.Size = UDim2.fromScale(0.28, 0.07)
+	targetCard.Visible = false
+	local targetName = UiKit.Label(targetCard, "")
+	targetName.Position = UDim2.fromScale(0.06, 0.08)
+	targetName.Size = UDim2.fromScale(0.88, 0.42)
+	targetName.Font = UiKit.FontTitle
+	targetName.TextSize = 14
+	local targetBack = Instance.new("Frame")
+	targetBack.Position = UDim2.fromScale(0.06, 0.58)
+	targetBack.Size = UDim2.fromScale(0.88, 0.28)
+	targetBack.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+	targetBack.BorderSizePixel = 0
+	targetBack.Parent = targetCard
+	UiKit.Corner(targetBack, 6)
+	local targetFill = Instance.new("Frame")
+	targetFill.Size = UDim2.fromScale(1, 1)
+	targetFill.BackgroundColor3 = Color3.fromRGB(220, 70, 80)
+	targetFill.BorderSizePixel = 0
+	targetFill.Parent = targetBack
+	UiKit.Corner(targetFill, 6)
 
-	local status = UiKit.Label(root, "")
-	status.AnchorPoint = Vector2.new(0.5, 1)
-	status.Position = UDim2.fromScale(0.4, -0.02)
-	status.Size = UDim2.fromScale(0.7, 0.16)
-	status.TextXAlignment = Enum.TextXAlignment.Center
-	status.Font = Enum.Font.GothamBold
-	status.TextColor3 = Color3.fromRGB(255, 220, 140)
+	local dock = UiKit.Glass(gui, accent)
+	dock.Name = "Hotbar"
+	dock.AnchorPoint = Vector2.new(0.5, 1)
+	dock.Position = UDim2.fromScale(0.5, 0.97)
+	dock.Size = UDim2.fromScale(0.52, 0.16)
+	ClassDecor.Attach(dock, Util.ReadString(player:GetAttribute("ClassId"), "KiWarrior"))
+	UiKit.Pop(dock)
 
-	local combat = UiKit.Label(root, "")
-	combat.AnchorPoint = Vector2.new(0, 0)
-	combat.Position = UDim2.fromScale(0.03, 0.04)
-	combat.Size = UDim2.fromScale(0.28, 0.12)
-	combat.Font = Enum.Font.GothamBold
-	combat.TextSize = 12
-	combat.TextColor3 = Color3.fromRGB(255, 120, 90)
-
-	local function bar(name: string, y: number, color: Color3): (Frame, TextLabel)
+	local function meter(name: string, y: number, color: Color3): (Frame, TextLabel)
 		local back = Instance.new("Frame")
 		back.Name = name
-		back.Position = UDim2.fromScale(0.03, y)
-		back.Size = UDim2.fromScale(0.62, 0.1)
+		back.Position = UDim2.fromScale(0.04, y)
+		back.Size = UDim2.fromScale(0.62, 0.14)
 		back.BackgroundColor3 = Color3.fromRGB(6, 8, 12)
-		back.BackgroundTransparency = 0.2
+		back.BackgroundTransparency = 0.15
 		back.BorderSizePixel = 0
-		back.Parent = root
-		UiKit.Corner(back, 8)
+		back.Parent = dock
+		UiKit.Corner(back, 7)
 		local fill = Instance.new("Frame")
-		fill.Name = "Fill"
 		fill.Size = UDim2.fromScale(1, 1)
 		fill.BackgroundColor3 = color
 		fill.BorderSizePixel = 0
 		fill.Parent = back
-		UiKit.Corner(fill, 8)
-		UiKit.Gradient(fill, color, color:Lerp(Color3.new(1, 1, 1), 0.35), 0)
+		UiKit.Corner(fill, 7)
 		local text = UiKit.Label(back, "")
 		text.Size = UDim2.fromScale(1, 1)
 		text.TextXAlignment = Enum.TextXAlignment.Center
-		text.Font = Enum.Font.GothamBold
-		text.TextSize = 13
+		text.Font = UiKit.FontTitle
+		text.TextSize = 12
 		return fill, text
 	end
 
-	local healthFill, healthText = bar("Health", 0.18, Color3.fromRGB(220, 70, 80))
-	local energyFill, energyText = bar("Energy", 0.3, classColor(player))
+	local healthFill, healthText = meter("Health", 0.06, Color3.fromRGB(214, 72, 84))
+	local energyFill, energyText = meter("Energy", 0.22, accent)
+
+	local combo = UiKit.Label(dock, "")
+	combo.AnchorPoint = Vector2.new(1, 0)
+	combo.Position = UDim2.fromScale(0.66, 0.06)
+	combo.Size = UDim2.fromScale(0.2, 0.28)
+	combo.Font = UiKit.FontTitle
+	combo.TextSize = 22
+	combo.TextXAlignment = Enum.TextXAlignment.Right
+	combo.TextColor3 = accent
 
 	local slots = Instance.new("Frame")
-	slots.Name = "Slots"
-	slots.Position = UDim2.fromScale(0.03, 0.44)
-	slots.Size = UDim2.fromScale(0.62, 0.5)
+	slots.Position = UDim2.fromScale(0.04, 0.42)
+	slots.Size = UDim2.fromScale(0.62, 0.52)
 	slots.BackgroundTransparency = 1
-	slots.Parent = root
-	local layout = Instance.new("UIListLayout")
-	layout.FillDirection = Enum.FillDirection.Horizontal
-	layout.Padding = UDim.new(0.02, 0)
-	layout.VerticalAlignment = Enum.VerticalAlignment.Center
-	layout.Parent = slots
+	slots.Parent = dock
+	local row = Instance.new("UIListLayout")
+	row.FillDirection = Enum.FillDirection.Horizontal
+	row.Padding = UDim.new(0.018, 0)
+	row.VerticalAlignment = Enum.VerticalAlignment.Center
+	row.Parent = slots
 
-	type SlotGui = { button: TextButton, nameLabel: TextLabel, sweep: Frame, hand: Frame, timeLabel: TextLabel }
-	local slotGuis: { SlotGui } = {}
+	type Slot = { button: TextButton, nameLabel: TextLabel, sweep: Frame, hand: Frame, timeLabel: TextLabel, decor: Frame? }
+	local slotGuis: { Slot } = {}
 
 	for index = 1, 5 do
 		local button = UiKit.Button(slots, "")
-		button.Name = "Slot" .. tostring(index)
-		button.Size = UDim2.fromScale(0.18, 1)
+		button.Size = UDim2.fromScale(0.184, 1)
 		button.Text = ""
-		button.BackgroundColor3 = Color3.fromRGB(16, 18, 28)
-		button.BackgroundTransparency = 0.15
+		button.BackgroundTransparency = 0.12
 		button.LayoutOrder = index
 		UiKit.Corner(button, 10)
-		UiKit.Glow(button, if index == 5 then Color3.fromRGB(255, 196, 80) else Color3.fromRGB(80, 90, 120))
-		local keyLabel = UiKit.Label(button, KEYS[index])
-		keyLabel.Size = UDim2.fromScale(0.42, 0.28)
-		keyLabel.Position = UDim2.fromScale(0.06, 0.06)
-		keyLabel.Font = Enum.Font.GothamBold
-		keyLabel.TextSize = 12
-		keyLabel.TextColor3 = Color3.fromRGB(200, 210, 230)
+		UiKit.Glow(button, if index == 5 then Color3.fromRGB(255, 196, 90) else accent)
+		local key = UiKit.Label(button, KEYS[index])
+		key.Size = UDim2.fromScale(0.5, 0.28)
+		key.Position = UDim2.fromScale(0.08, 0.06)
+		key.Font = UiKit.FontTitle
+		key.TextSize = 12
+		key.TextColor3 = UiKit.Muted
 		local nameLabel = UiKit.Label(button, "Empty")
-		nameLabel.Size = UDim2.fromScale(0.88, 0.46)
-		nameLabel.Position = UDim2.fromScale(0.06, 0.4)
+		nameLabel.Position = UDim2.fromScale(0.08, 0.38)
+		nameLabel.Size = UDim2.fromScale(0.84, 0.5)
 		nameLabel.TextScaled = true
-		local limit = Instance.new("UITextSizeConstraint")
-		limit.MaxTextSize = 14
-		limit.MinTextSize = 8
-		limit.Parent = nameLabel
+		nameLabel.Font = UiKit.FontTitle
+		local cap = Instance.new("UITextSizeConstraint")
+		cap.MaxTextSize = 14
+		cap.MinTextSize = 8
+		cap.Parent = nameLabel
 		local sweep = Instance.new("Frame")
 		sweep.AnchorPoint = Vector2.new(0.5, 1)
 		sweep.Position = UDim2.fromScale(0.5, 1)
 		sweep.Size = UDim2.fromScale(1, 0)
 		sweep.BackgroundColor3 = Color3.new(0, 0, 0)
-		sweep.BackgroundTransparency = 0.4
+		sweep.BackgroundTransparency = 0.45
 		sweep.BorderSizePixel = 0
-		sweep.ZIndex = 2
+		sweep.ZIndex = 3
 		sweep.Visible = false
 		sweep.Parent = button
 		UiKit.Corner(sweep, 10)
 		local hand = Instance.new("Frame")
 		hand.AnchorPoint = Vector2.new(0.5, 1)
 		hand.Position = UDim2.fromScale(0.5, 0.5)
-		hand.Size = UDim2.new(0, 2, 0.48, 0)
+		hand.Size = UDim2.new(0, 2, 0.46, 0)
 		hand.BackgroundColor3 = Color3.new(1, 1, 1)
 		hand.BorderSizePixel = 0
 		hand.ZIndex = 4
 		hand.Visible = false
 		hand.Parent = button
 		local timeLabel = UiKit.Label(button, "")
-		timeLabel.Size = UDim2.fromScale(1, 0.4)
-		timeLabel.Position = UDim2.fromScale(0, 0.3)
+		timeLabel.Size = UDim2.fromScale(1, 0.46)
+		timeLabel.Position = UDim2.fromScale(0, 0.24)
 		timeLabel.TextXAlignment = Enum.TextXAlignment.Center
-		timeLabel.Font = Enum.Font.GothamBold
+		timeLabel.Font = UiKit.FontTitle
 		timeLabel.TextSize = 18
 		timeLabel.ZIndex = 5
 		local slotIndex = index
 		button.Activated:Connect(function()
+			selected = slotIndex
 			AbilityClient.Cast(slotIndex)
 		end)
-		slotGuis[index] = { button = button, nameLabel = nameLabel, sweep = sweep, hand = hand, timeLabel = timeLabel }
+		slotGuis[index] = {
+			button = button,
+			nameLabel = nameLabel,
+			sweep = sweep,
+			hand = hand,
+			timeLabel = timeLabel,
+		}
 	end
 
-	local function side(text: string, x: number, y: number): TextButton
-		local button = UiKit.Button(root, text)
-		button.Position = UDim2.fromScale(x, y)
-		button.Size = UDim2.fromScale(0.15, 0.2)
-		button.TextSize = 13
-		button.BackgroundTransparency = 0.1
+	local tools = Instance.new("Frame")
+	tools.Position = UDim2.fromScale(0.68, 0.08)
+	tools.Size = UDim2.fromScale(0.29, 0.84)
+	tools.BackgroundTransparency = 1
+	tools.Parent = dock
+	local toolRow = Instance.new("UIGridLayout")
+	toolRow.CellSize = UDim2.fromScale(0.48, 0.2)
+	toolRow.CellPadding = UDim2.fromScale(0.04, 0.04)
+	toolRow.Parent = tools
+
+	local function tool(text: string): TextButton
+		local button = UiKit.Button(tools, text)
+		button.TextSize = 12
 		UiKit.Corner(button, 8)
-		UiKit.Glow(button, classColor(player))
 		return button
 	end
-
-	local menuButton = side("Menu", 0.68, 0.02)
-	menuButton.Size = UDim2.fromScale(0.31, 0.14)
-	menuButton.Activated:Connect(function()
+	tool("Menu").Activated:Connect(function()
 		AbilityClient.ReturnToMenu()
 	end)
-	local attack = side("Attack", 0.68, 0.18)
-	local dash = side("Dash", 0.84, 0.18)
-	local blockButton = side("Block", 0.68, 0.42)
-	local parryButton = side("Parry", 0.84, 0.42)
-	local rise = side("Rise", 0.68, 0.66)
-	local drop = side("Drop", 0.84, 0.66)
-	rise.Visible = false
-	drop.Visible = false
-	attack.Activated:Connect(function()
+	tool("Attack").Activated:Connect(function()
 		AbilityClient.M1()
 	end)
-	dash.Activated:Connect(function()
+	tool("Dash").Activated:Connect(function()
 		AbilityClient.Dash()
 	end)
+	local blockButton = tool("Block")
+	local parryButton = tool("Parry")
+	local rise = tool("Rise")
+	local drop = tool("Drop")
+	rise.Visible = false
+	drop.Visible = false
 	blockButton.MouseButton1Down:Connect(function()
 		AbilityClient.SetBlock(true)
 	end)
@@ -214,56 +233,81 @@ function Hotbar.Mount(gui: ScreenGui)
 		MovementClient.SetVertical(0)
 	end)
 
-	local function refreshChrome()
-		local camera = workspace.CurrentCamera
-		local width = if camera then camera.ViewportSize.X else 1280
-		root.Size = if width < 800 then UDim2.fromScale(0.96, 0.28) else UDim2.fromScale(0.62, 0.22)
-		local accent = classColor(player)
-		panelStroke.Color = accent
+	local decoratedSlot = 0
+	local function retint()
+		accent = classColor(player)
+		local classId = Util.ReadString(player:GetAttribute("ClassId"), "KiWarrior")
 		energyFill.BackgroundColor3 = accent
-		local showFlight = UserInputService.TouchEnabled
-		for _, id in LoadoutUtil.Decode(player:GetAttribute("Loadout")) do
-			if id == "Flight" then
-				showFlight = true
-			end
+		combo.TextColor3 = accent
+		local stroke = dock:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Color = accent
 		end
-		local character = player.Character
-		if character and character:GetAttribute("Flying") == true then
-			showFlight = true
+		local targetStroke = targetCard:FindFirstChildOfClass("UIStroke")
+		if targetStroke then
+			targetStroke.Color = accent
 		end
-		rise.Visible = showFlight
-		drop.Visible = showFlight
+		ClassDecor.Attach(dock, classId)
+		decoratedSlot = 0
 	end
 
+	local currentTarget: Humanoid? = nil
 	RunService.RenderStepped:Connect(function(dt)
 		local energy = Util.ReadNumber(player:GetAttribute("Energy"), 0)
 		local maxEnergy = math.max(1, Util.ReadNumber(player:GetAttribute("MaxEnergy"), 100))
-		local targetEnergy = energy / maxEnergy
-		shownEnergy += (targetEnergy - shownEnergy) * math.min(1, dt * 10)
+		shownEnergy += (energy / maxEnergy - shownEnergy) * math.min(1, dt * 10)
 		energyFill.Size = UDim2.fromScale(math.clamp(shownEnergy, 0, 1), 1)
 		energyText.Text = string.format("KI  %d", math.floor(energy + 0.5))
 
 		local character = player.Character
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-		local targetHealth = 1
+		local hp = 1
 		if humanoid and humanoid.MaxHealth > 0 then
-			targetHealth = humanoid.Health / humanoid.MaxHealth
+			hp = humanoid.Health / humanoid.MaxHealth
 			healthText.Text = string.format("HP  %d", math.floor(humanoid.Health + 0.5))
-		else
-			healthText.Text = "HP"
 		end
-		shownHealth += (targetHealth - shownHealth) * math.min(1, dt * 8)
+		shownHealth += (hp - shownHealth) * math.min(1, dt * 8)
 		healthFill.Size = UDim2.fromScale(math.clamp(shownHealth, 0, 1), 1)
 
-		status.Text = AbilityClient.GetStatus()
-		local inCombat = player:GetAttribute("InCombat") == true
-		combat.Text = if inCombat then "IN COMBAT" else ""
+		local untilTime = player:GetAttribute("ComboUntil")
+		local step = player:GetAttribute("ComboStep")
+		if typeof(step) == "number" and typeof(untilTime) == "number" and workspace:GetServerTimeNow() < untilTime then
+			combo.Text = tostring(step) .. "x"
+		else
+			combo.Text = ""
+		end
+
+		local camera = workspace.CurrentCamera
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if camera and root and root:IsA("BasePart") then
+			local params = RaycastParams.new()
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			params.FilterDescendantsInstances = { character }
+			local hit = workspace:Raycast(camera.CFrame.Position, camera.CFrame.LookVector * 180, params)
+			local model = hit and hit.Instance:FindFirstAncestorOfClass("Model")
+			local foe = model and model:FindFirstChildOfClass("Humanoid")
+			if foe and foe.Health > 0 and model ~= character then
+				currentTarget = foe
+				targetCard.Visible = true
+				targetName.Text = model.Name
+			end
+		end
+		if currentTarget and currentTarget.Parent and currentTarget.Health > 0 then
+			local ratio = currentTarget.Health / math.max(currentTarget.MaxHealth, 1)
+			shownTarget += (ratio - shownTarget) * math.min(1, dt * 8)
+			targetFill.Size = UDim2.fromScale(math.clamp(shownTarget, 0, 1), 1)
+		else
+			targetCard.Visible = false
+			currentTarget = nil
+		end
+
 		local equipped = LoadoutUtil.Decode(player:GetAttribute("Loadout"))
 		for index, widgets in slotGuis do
 			local ability = AbilityRegistry.Get(equipped[index] or "")
+			local chosen = index == selected
 			if ability then
 				widgets.nameLabel.Text = ability.name
-				widgets.button.BackgroundColor3 = ability.color:Lerp(Color3.fromRGB(10, 12, 20), 0.72)
+				widgets.button.BackgroundColor3 = ability.color:Lerp(Color3.fromRGB(10, 12, 18), if chosen then 0.45 else 0.72)
 				local remain = AbilityClient.GetRemaining(ability.id)
 				if remain > 0.05 then
 					local fraction = math.clamp(remain / math.max(ability.cooldown, 0.1), 0, 1)
@@ -279,20 +323,37 @@ function Hotbar.Mount(gui: ScreenGui)
 				end
 			else
 				widgets.nameLabel.Text = "Empty"
-				widgets.button.BackgroundColor3 = Color3.fromRGB(16, 18, 28)
+				widgets.button.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
 				widgets.sweep.Visible = false
 				widgets.hand.Visible = false
 				widgets.timeLabel.Text = ""
 			end
 		end
+
+		if selected ~= decoratedSlot then
+			decoratedSlot = selected
+			local classId = Util.ReadString(player:GetAttribute("ClassId"), "KiWarrior")
+			for index, widgets in slotGuis do
+				local old = widgets.button:FindFirstChild("ClassDecor")
+				if old and index ~= selected then
+					old:Destroy()
+				end
+			end
+			ClassDecor.Attach(slotGuis[selected].button, classId)
+		end
+
+		local showFlight = player.Character ~= nil and player.Character:GetAttribute("Flying") == true
+		for _, id in LoadoutUtil.Decode(player:GetAttribute("Loadout")) do
+			if id == "Flight" then
+				showFlight = true
+			end
+		end
+		rise.Visible = showFlight
+		drop.Visible = showFlight
 	end)
 
-	player:GetAttributeChangedSignal("ClassId"):Connect(function()
-		TweenService:Create(panelStroke, TweenInfo.new(0.25), { Color = classColor(player) }):Play()
-		refreshChrome()
-	end)
-	player:GetAttributeChangedSignal("Loadout"):Connect(refreshChrome)
-	refreshChrome()
+	player:GetAttributeChangedSignal("ClassId"):Connect(retint)
+	retint()
 end
 
 return Hotbar
